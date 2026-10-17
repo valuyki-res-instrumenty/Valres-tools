@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>РЭС-Инструменты — рабочие калькуляторы</title>
+<style>
+  :root{
+    --yellow:#ffcc00; --dark:#1c2b3a; --accent:#f39c12; --ok:#27ae60;
+    --bg:#f4f6f9; --card:#ffffff; --muted:#5d6b7a;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:'Segoe UI',Roboto,Arial,sans-serif; background:var(--bg); color:var(--dark);}
+  header{
+    background:linear-gradient(135deg,var(--dark) 0%, #2e4a63 100%);
+    color:#fff; padding:28px 16px 22px;
+  }
+  .wrap{max-width:960px; margin:0 auto;}
+  .brand{display:flex; align-items:center; gap:12px;}
+  .logo{
+    width:46px; height:46px; border-radius:10px; background:var(--yellow);
+    display:flex; align-items:center; justify-content:center; font-size:24px;
+  }
+  h1{font-size:1.5rem;} .sub{color:#cfd8e3; font-size:.95rem; margin-top:2px;}
+  .search-box{margin-top:18px; position:relative;}
+  .search-box input{
+    width:100%; padding:13px 16px 13px 44px; border:none; border-radius:12px;
+    font-size:1rem; outline:none;
+  }
+  .search-box::before{
+    content:"🔍"; position:absolute; left:14px; top:50%; transform:translateY(-50%);
+  }
+  .field-note{
+    margin-top:12px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15);
+    padding:10px 14px; border-radius:10px; font-size:.9rem; color:#e8eef5;
+  }
+  main{padding:22px 16px 40px;}
+  .section-title{font-size:1.15rem; margin:18px 0 12px;}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px;}
+  .card{
+    background:var(--card); border-radius:14px; padding:18px;
+    box-shadow:0 2px 8px rgba(0,0,0,.06); display:flex; flex-direction:column;
+    border-top:4px solid var(--yellow);
+  }
+  .card .icon{font-size:34px;}
+  .card h3{margin:10px 0 6px; font-size:1.05rem;}
+  .card p{color:var(--muted); font-size:.9rem; flex:1; line-height:1.45;}
+  .badge{
+    display:inline-block; margin-top:10px; font-size:.75rem; padding:4px 10px;
+    border-radius:20px; background:#e8f8f0; color:var(--ok); font-weight:600;
+    align-self:flex-start;
+  }
+  .badge.dev{background:#fdf3e0; color:var(--accent);}
+  .actions{display:flex; gap:8px; margin-top:14px;}
+  .btn{
+    flex:1; text-align:center; padding:10px 0; border-radius:9px; font-weight:600;
+    font-size:.9rem; text-decoration:none; border:none; cursor:pointer; transition:.15s;
+  }
+  .btn-open{background:var(--yellow); color:#333;}
+  .btn-open:hover{filter:brightness(1.05);}
+  .btn-apk{background:#eef1f5; color:var(--dark); border:1px solid #d7dde4;}
+  .btn.disabled{opacity:.55; cursor:not-allowed;}
+  .hint{
+    margin-top:26px; background:#eef4fb; border-left:4px solid #3d8bfd;
+    padding:14px 16px; border-radius:0 10px 10px 0; font-size:.92rem; line-height:1.5;
+  }
+  .hint b{display:block; margin-bottom:6px;}
+  footer{padding:20px 16px 30px; text-align:center; color:var(--muted); font-size:.85rem;}
+  .empty{
+    display:none; text-align:center; color:var(--muted); padding:30px 10px;
+    background:#fff; border-radius:12px;
+  }
+  /* окно калькулятора поверх портала */
+  .calc-modal{
+    display:none; position:fixed; inset:0; z-index:50;
+    background:#12161c; /* фон как в калькуляторе */
+  }
+  .calc-modal.on{display:block;}
+  .calc-modal iframe{width:100%; height:100%; border:none; display:block;}
+  .calc-close{
+    position:fixed; top:10px; right:12px; z-index:60;
+    background:#232c37; color:#e8eef5; border:1px solid #33404f;
+    border-radius:10px; width:40px; height:40px; font-size:18px; cursor:pointer;
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="brand">
+      <div class="logo">⚡</div>
+      <div>
+        <h1>РЭС-Инструменты</h1>
+        <div class="sub">Расчёты и приложения для работников Валуйского района электросетей</div>
+      </div>
+    </div>
+    <div class="search-box">
+      <input type="search" id="search" placeholder="Найти расчёт: жила, стрела провеса, кабель…">
+    </div>
+    <div class="field-note">📱 В поле без интернета? Откройте нужный калькулятор заранее и добавьте его на главный экран — расчёт будет работать офлайн.</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="section-title">Калькуляторы и приложения</div>
+  <div class="grid" id="grid">
+
+    <div class="card" data-tags="жила медная вставка предохранитель пн-2 пк-10 замена выбор сечение">
+      <div class="icon">🔌</div>
+      <h3>Выбор медной жилы для замены ПН-2 и ПК-10</h3>
+      <p>Подбор сечения медной жилы (вставки) для замены плавких вставок предохранителей ПН-2 и ПК-10 по номинальному току.</p>
+      <span class="badge">Работает офлайн</span>
+      <div class="actions">
+        <button class="btn btn-open" onclick="openCalc()">Открыть</button>
+        <button class="btn btn-apk disabled" title="Подключим на следующем шаге">APK</button>
+      </div>
+    </div>
+
+    <div class="card" data-tags="стрела провеса провес провод монтаж вл 0.4 10 кв вл-0.4 вл-10">
+      <div class="icon">🏗️</div>
+      <h3>Стрела провеса при монтаже проводов</h3>
+      <p>Расчёт стрелы провеса проводов для монтажа на ВЛ-0,4 кВ и ВЛ-10 кВ: пролёт, температура, марка провода.</p>
+      <span class="badge dev">В разработке</span>
+      <div class="actions">
+        <button class="btn btn-open disabled">Скоро</button>
+        <button class="btn btn-apk disabled">Скоро</button>
+      </div>
+    </div>
+
+  </div>
+  <div class="empty" id="empty">Ничего не найдено. Попробуйте другое слово — например «жила» или «провес».</div>
+
+  <div class="hint">
+    <b>📲 Как работать без интернета в поле:</b>
+    1. Дома или на базе, где есть связь, откройте нужный калькулятор.
+    2. В меню браузера телефона (⋮) выберите «Добавить на главный экран».
+    3. В поле запускайте расчёт значком с рабочего стола — интернет не нужен.
+    <br><br>
+    💾 Если у приложения есть версия APK — скачайте её заранее тем же способом.
+  </div>
+</main>
+
+<footer>
+  Внутренний ресурс для работников РЭС · Список приложений пополняется
+</footer>
+
+<!-- Окно калькулятора: сам калькулятор вшит внутрь через srcdoc без изменений -->
+<div class="calc-modal" id="calcModal">
+  <iframe id="calcFrame" srcdoc="&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;ru&quot;&gt;&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;title&gt;Вставка: расчёт жилки&lt;/title&gt;
+&lt;style&gt;
+:root{--bg:#12161c;--card:#1b222b;--tx:#e8eef5;--dim:#8fa0b3;--ok:#43c97b;--bad:#ff6a5e;--warn:#f2b44a;--ac:#5ab0ff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif;padding:14px 12px 44px}
+.wrap{max-width:640px;margin:0 auto}
+h1{font-size:19px;margin:2px 0 14px}
+h2{font-size:14px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin:12px 0 8px;font-weight:600}
+.card{background:var(--card);border-radius:12px;padding:12px;margin-bottom:10px}
+.seg{display:flex;gap:8px}
+.seg button{flex:1}
+button{background:#232c37;color:var(--tx);border:1px solid #33404f;border-radius:10px;padding:10px 8px;font-size:15px;cursor:pointer}
+button.on{background:var(--ac);border-color:var(--ac);color:#08121d;font-weight:700}
+input{width:100%;background:#0e1319;border:1px solid #33404f;color:var(--tx);border-radius:10px;padding:11px;font-size:17px}
+input[type=number]{-moz-appearance:textfield}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+#newd::placeholder{color:#e6edf5;opacity:1;font-weight:600}#newd::-webkit-input-placeholder{color:#e6edf5;opacity:1;font-weight:600}
+.pw{display:flex;gap:6px}
+.pw&gt;input{flex:1;height:48px;font-size:17px;padding:6px 10px}
+.stp{display:flex;flex-direction:column;gap:4px}
+.stp button{width:45px;height:22px;padding:0;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center}
+.stp button:disabled{opacity:.3;cursor:default}
+.prow{font-size:13px;color:var(--dim);letter-spacing:.02em}
+.hintbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 16px;margin-top:6px}
+.row{display:flex;gap:8px;margin:8px 0}
+.row&gt;div{flex:1}
+label{display:block;font-size:16px;color:var(--dim);margin-bottom:4px}
+.big{font-size:19.5px;font-weight:800;margin:2px 0}
+.ok{color:var(--ok)} .bad{color:var(--bad)} .warn{color:var(--warn)} .dim{color:var(--dim)}
+.tag{display:inline-block;border-radius:999px;padding:2px 10px;font-size:13px;margin:2px 4px 2px 0;border:1px solid #33404f}
+.tag.hit{border-color:var(--ok);color:var(--ok);background:rgba(67,201,123,.1)}
+.tag.no{border-color:#3a4553;color:#75879b}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:4px 4px;border-bottom:1px solid #2a3441;text-align:right}
+th{color:var(--dim);font-weight:600;font-size:16px;text-transform:uppercase}
+td:first-child,th:first-child{text-align:left}
+.verdict{border-left:4px solid var(--ok);background:rgba(67,201,123,.09);padding:10px 12px;border-radius:8px;margin:10px 0}
+.verdict.no{border-color:var(--bad);background:rgba(255,106,94,.1)}
+small{color:var(--dim);font-size:16px}
+.note{font-size:13px;color:var(--dim);margin-top:10px}
+.warnbox{border-left:4px solid var(--warn);background:rgba(242,180,74,.09);padding:9px 11px;border-radius:8px;font-size:14px;margin:8px 0}
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;div class=&quot;wrap&quot;&gt;
+&lt;h1 id=&quot;ttl&quot;&gt;Вставка из медной жилки вместо ПН-2&lt;/h1&gt;
+
+&lt;div class=&quot;card&quot;&gt;
+&lt;div class=&quot;seg&quot;&gt;
+ &lt;button id=&quot;u04&quot; class=&quot;on&quot; onclick=&quot;setU(0.4)&quot;&gt;0,4 кВ&lt;/button&gt;
+ &lt;button id=&quot;u10&quot; onclick=&quot;setU(10)&quot;&gt;10 кВ&lt;/button&gt;
+&lt;/div&gt;
+&lt;div id=&quot;kvaBox&quot; style=&quot;display:none&quot;&gt;
+ &lt;div class=&quot;row&quot;&gt;
+  &lt;div&gt;&lt;label&gt;Мощность тр-ра, кВА&lt;/label&gt;
+   &lt;div class=&quot;pw&quot;&gt;&lt;input id=&quot;kva&quot; type=&quot;number&quot; inputmode=&quot;decimal&quot; value=&quot;160&quot; oninput=&quot;fromKva()&quot;&gt;
+    &lt;div class=&quot;stp&quot;&gt;&lt;button type=&quot;button&quot; id=&quot;kup&quot; title=&quot;к ближайшей большей типовой мощности&quot; onclick=&quot;stepP(1)&quot;&gt;&amp;#9650;&lt;/button&gt;
+     &lt;button type=&quot;button&quot; id=&quot;kdn&quot; title=&quot;к ближайшей меньшей типовой мощности&quot; onclick=&quot;stepP(-1)&quot;&gt;&amp;#9660;&lt;/button&gt;&lt;/div&gt;&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div&gt;&lt;label&gt;ток ВН, А&lt;/label&gt;&lt;input id=&quot;inA10&quot; type=&quot;number&quot; inputmode=&quot;decimal&quot; oninput=&quot;U=10;calc()&quot;&gt;&lt;/div&gt;
+ &lt;/div&gt;
+ &lt;div class=&quot;hintbar&quot;&gt;&lt;div class=&quot;prow&quot;&gt;ряд: 25 &amp;middot; 40 &amp;middot; 63 &amp;middot; 100 &amp;middot; 160 &amp;middot; 250 &amp;middot; 400 &amp;middot; 630&lt;/div&gt;&lt;small&gt;I&lt;sub&gt;ном&lt;/sub&gt; = S / (&amp;radic;3 &amp;middot; 10 кВ)&lt;/small&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;row&quot; id=&quot;inBox&quot;&gt;&lt;div&gt;&lt;label&gt;Номинальный ток вставки In, А&lt;/label&gt;
+&lt;input id=&quot;inA&quot; type=&quot;number&quot; inputmode=&quot;decimal&quot; value=&quot;63&quot; oninput=&quot;calc()&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;div class=&quot;card&quot;&gt;
+&lt;h2 style=&quot;margin-top:0&quot;&gt;Жилки, которые есть в наличии&lt;/h2&gt;
+&lt;div id=&quot;tags&quot;&gt;&lt;/div&gt;
+&lt;div class=&quot;row&quot;&gt;&lt;div&gt;&lt;label&gt;Добавить замеренный диаметр, мм&lt;/label&gt;&lt;input id=&quot;newd&quot; type=&quot;number&quot; step=&quot;0.01&quot; inputmode=&quot;decimal&quot; placeholder=&quot;0.45&quot;&gt;&lt;/div&gt;
+&lt;div style=&quot;display:flex;align-items:flex-end&quot;&gt;&lt;button style=&quot;width:100%&quot; onclick=&quot;addD()&quot;&gt;Добавить&lt;/button&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h2&gt;Замер по намотке (точнее штангенциркуля)&lt;/h2&gt;
+&lt;div class=&quot;row&quot;&gt;
+ &lt;div&gt;&lt;label&gt;Витков N&lt;/label&gt;&lt;input id=&quot;nw&quot; type=&quot;number&quot; inputmode=&quot;numeric&quot; value=&quot;50&quot; oninput=&quot;wind()&quot;&gt;&lt;/div&gt;
+ &lt;div&gt;&lt;label&gt;Длина намотки, мм&lt;/label&gt;&lt;input id=&quot;lw&quot; type=&quot;number&quot; step=&quot;0.1&quot; inputmode=&quot;decimal&quot; value=&quot;22.5&quot; oninput=&quot;wind()&quot;&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;dim&quot; id=&quot;windres&quot;&gt;&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;div class=&quot;card&quot;&gt;
+&lt;h2 style=&quot;margin-top:0&quot;&gt;Какая жилка нужна&lt;/h2&gt;
+&lt;div id=&quot;need&quot;&gt;&lt;/div&gt;
+&lt;table id=&quot;wtab&quot;&gt;&lt;/table&gt;
+&lt;/div&gt;
+
+&lt;div class=&quot;card&quot;&gt;
+&lt;h2 style=&quot;margin-top:0&quot;&gt;Вердикт&lt;/h2&gt;
+&lt;div id=&quot;verdict&quot;&gt;&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;div class=&quot;card&quot; id=&quot;tcard&quot; style=&quot;display:none&quot;&gt;
+&lt;h2 style=&quot;margin-top:0&quot;&gt;Когда сгорит выбранная комбинация&lt;/h2&gt;
+&lt;table id=&quot;ttab&quot;&gt;&lt;/table&gt;
+&lt;div class=&quot;dim&quot; id=&quot;tchk&quot; style=&quot;margin-top:7px&quot;&gt;&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;div class=&quot;note&quot; id=&quot;rules&quot;&gt;&lt;/div&gt;
+&lt;div class=&quot;note&quot;&gt;Модель: «вечный» порог плавления одной жилки I&amp;nbsp;&amp;asymp;&amp;nbsp;56&amp;middot;d&lt;sup&gt;1,5&lt;/sup&gt; (медь, открытый воздух, свободный участок от 50 мм).
+Время выше порога даётся универсальной кривой по отношению I/порог, на больших токах — адиабатикой. Ошибка порядка &amp;plusmn;30&amp;nbsp;%.&lt;/div&gt;
+&lt;div class=&quot;note&quot;&gt;&lt;b&gt;Временная мера.&lt;/b&gt; Намотка не является штатной защитой: она держит только перегрузку и КЗ в пределах посчитанного, селективность с нижними автоматами не обеспечивает. После подачи напряжения — доклад дежурному и замена на штатную вставку при первой возможности.&lt;/div&gt;
+&lt;/div&gt;
+&lt;script&gt;
+const K=56.0, ADK=1.3e5;
+const I1=d=&gt;K*Math.pow(d,1.5);
+const SA=d=&gt;Math.PI*d*d/4;
+const CT=[[1.01,60],[1.015,45],[1.02,30],[1.03,25],[1.05,19],[1.10,13],[1.15,11],[1.25,10],[1.30,8],[1.60,5],[2.00,2.3],[2.50,1.2],[3.00,1.0]];
+function tCurve(r){
+  if(r&lt;=1) return Infinity;
+  if(r&gt;=3) return 9/(r*r);
+  if(r&lt;=CT[0][0]) return CT[0][1]*Math.pow(CT[0][0]/r,2);
+  for(let i=1;i&lt;CT.length;i++) if(r&lt;=CT[i][0]){
+    const a=CT[i-1],b=CT[i],f=(Math.log(r)-Math.log(a[0]))/(Math.log(b[0])-Math.log(a[0]));
+    return a[1]*Math.exp(f*(Math.log(b[1])-Math.log(a[1])));
+  }
+  return 9/(r*r);
+}
+function tMelt(d,I,n){const Iw=I/n, r=Iw/I1(d); if(r&lt;=1) return Infinity;
+  return Math.min(tCurve(r), ADK*SA(d)*SA(d)/(Iw*Iw));}
+const TMAX=300;
+function bounds(U,In){return U===0.4?[In,1.11*In]:[In,2.0*In];}
+function win(U,In,n){const b=bounds(U,In);
+  return [Math.pow(b[0]/(K*n),2/3),Math.pow(b[1]/(K*n),2/3)];}
+function nRange(U,In,d){const b=bounds(U,In);
+  return [Math.ceil(b[0]/I1(d)-1e-9),Math.floor(b[1]/I1(d)+1e-9)];}
+function fits(U,In,d,n){const b=bounds(U,In), sw=n*I1(d);
+  if(U===0.4) return sw&gt;=b[0]-1e-9 &amp;&amp; sw&lt;=b[1]+1e-9;
+  return sw&gt;b[0] &amp;&amp; sw&lt;b[1]-1e-9 &amp;&amp; tMelt(d,2.0*In,n)&lt;=TMAX;}
+function fmt(t){if(t===Infinity) return &#x27;не сгорит&#x27;; if(t&lt;1) return (t*1000).toFixed(0)+&#x27; мс&#x27;;
+  if(t&lt;60) return (t&lt;10?t.toFixed(1):t.toFixed(0))+&#x27; с&#x27;; return (t/60).toFixed(t/60&lt;10?1:0)+&#x27; мин&#x27;;}
+
+let U=0.4;
+let DS=[0.45,0.41,0.26,0.20];
+const PRESETS=[[0.45,&#x27;ПЗ 25 мм²&#x27;],[0.41,&#x27;ПЗ 16 мм²&#x27;],[0.26,&#x27;ПВС 1,5&#x27;],[0.20,&#x27;ПВС 0,75&#x27;],[0.30,&#x27;ПВС 2,5&#x27;],[0.33,&#x27;ПВС 4&#x27;],[0.15,&#x27;МГТФ 0,2&#x27;],[0.10,&#x27;волосок 0,1&#x27;]];
+
+function setU(u){U=u;document.getElementById(&#x27;u04&#x27;).classList.toggle(&#x27;on&#x27;,u===0.4);
+  document.getElementById(&#x27;u10&#x27;).classList.toggle(&#x27;on&#x27;,u===10);
+  document.getElementById(&#x27;kvaBox&#x27;).style.display=u===10?&#x27;block&#x27;:&#x27;none&#x27;;
+  document.getElementById(&#x27;inBox&#x27;).style.display=u===10?&#x27;none&#x27;:&#x27;flex&#x27;;
+  document.getElementById(&#x27;ttl&#x27;).textContent=u===0.4?&#x27;Вставка из медной жилки вместо ПН-2&#x27;:&#x27;Вставка из медной жилки вместо ПК-10&#x27;;
+  syncEdges(); if(u===10) fromKva(); else calc();}
+function fromKva(){const s=parseFloat(document.getElementById(&#x27;kva&#x27;).value)||0;
+  const i=s*1000/(Math.sqrt(3)*10000); document.getElementById(&#x27;inA10&#x27;).value=i.toFixed(2);
+  document.getElementById(&#x27;inA&#x27;).value=i.toFixed(2); U=10; syncEdges(); calc();}
+const PWS=[25,40,63,100,160,250,400,630];
+function stepP(dir){
+  const el=document.getElementById(&#x27;kva&#x27;), cur=parseFloat(el.value);
+  if(!isFinite(cur)){el.value=dir&gt;0?PWS[0]:PWS[PWS.length-1]; fromKva(); return;}
+  const big=PWS.filter(x=&gt;x&gt;cur+1e-9), sml=PWS.filter(x=&gt;x&lt;cur-1e-9);
+  let v=dir&gt;0?big[0]:sml[sml.length-1];
+  if(v===undefined) v=(cur&lt;25)?25:((cur&gt;630)?630:undefined);
+  if(v===undefined) return;
+  el.value=v; fromKva();}
+function syncEdges(){
+  const cur=parseFloat(document.getElementById(&#x27;kva&#x27;).value);
+  document.getElementById(&#x27;kup&#x27;).disabled=!isFinite(cur)||!PWS.some(x=&gt;x&gt;cur+1e-9);
+  document.getElementById(&#x27;kdn&#x27;).disabled=!isFinite(cur)||(!PWS.some(x=&gt;x&lt;cur-1e-9)&amp;&amp;cur&gt;=25);}
+function curIn(){return parseFloat((U===10?document.getElementById(&#x27;inA10&#x27;):document.getElementById(&#x27;inA&#x27;)).value)||0;}
+function addD(){const v=parseFloat(document.getElementById(&#x27;newd&#x27;).value); if(v&gt;0.01&amp;&amp;v&lt;3){DS.push(Math.round(v*100)/100);DS=[...new Set(DS)].sort((a,b)=&gt;b-a);render();} }
+function render(){document.getElementById(&#x27;tags&#x27;).innerHTML=DS.map(d=&gt;{
+  const nm=PRESETS.find(p=&gt;p[0]===d); const lab=nm?nm[1]:&#x27;⌀&#x27;+d.toFixed(2);
+  return `&lt;span class=&quot;tag ${hits(d)?&#x27;hit&#x27;:&#x27;no&#x27;}&quot;&gt;⌀${d.toFixed(2)}${nm?&#x27; · &#x27;+nm[1]:&#x27;&#x27;}&lt;/span&gt;`;}).join(&#x27;&#x27;)
+  ||&#x27;&lt;span class=&quot;dim&quot;&gt;добавь диаметр&lt;/span&gt;&#x27;;}
+function hits(d){const In=curIn(); if(In&lt;=0) return false;
+  const[lo,hi]=nRange(U,In,d); for(let n=Math.max(1,lo);n&lt;=Math.min(8,hi);n++) if(fits(U,In,d,n)) return true;
+  return false;}
+
+function wind(){const N=parseFloat(document.getElementById(&#x27;nw&#x27;).value)||0, L=parseFloat(document.getElementById(&#x27;lw&#x27;).value)||0;
+  const el=document.getElementById(&#x27;windres&#x27;);
+  if(N&lt;5||L&lt;=0){el.textContent=&#x27;&#x27;;return;}
+  const d=L/N; el.innerHTML=`⌀ = ${L}/${N} = &lt;b&gt;${d.toFixed(3)} мм&lt;/b&gt; &amp;nbsp; &lt;small&gt;(±0,05 мм на длине даёт ±${(100*0.05/L*N).toFixed(0)} % по d)&lt;/small&gt;`;}
+
+function calc(){
+  const In=curIn(); render();
+  const need=document.getElementById(&#x27;need&#x27;), tab=document.getElementById(&#x27;wtab&#x27;);
+  const V=document.getElementById(&#x27;verdict&#x27;);
+  if(In&lt;=0.05){need.innerHTML=tab.innerHTML=&#x27;&#x27;; V.innerHTML=&#x27;&lt;span class=&quot;dim&quot;&gt;введи ток&lt;/span&gt;&#x27;; return;}
+  document.getElementById(&#x27;rules&#x27;).innerHTML = U===0.4
+   ? &#x27;&lt;b&gt;Условие:&lt;/b&gt; на In вставка стоит вечно, при 1,25·In уходит за 8–13 с. Нужно n·I&lt;sub&gt;жилки&lt;/sub&gt; в интервале [In ; 1,11·In].&#x27;
+   : &#x27;&lt;b&gt;Условие:&lt;/b&gt; держит 2·In не более 5 мин (разрешённая перегрузка тр-ра) — сгорает при достижении 2·In. Нужно In &amp;lt; n·I&lt;sub&gt;жилки&lt;/sub&gt; &amp;lt; 2·In и время плавления при 2·In не более 5 мин.&#x27;;
+
+  let rows=&#x27;&#x27;;
+  for(let n=1;n&lt;=(U===10?4:8);n++){const[a,b]=win(U,In,n);
+    const have=DS.some(d=&gt;d&gt;=a-1e-9&amp;&amp;d&lt;=b+1e-9);
+    rows+=`&lt;tr&gt;&lt;td&gt;${n} ${n===1?&#x27;нитка&#x27;:&#x27;нитки&#x27;}&lt;/td&gt;&lt;td&gt;${a.toFixed(2)}…${b.toFixed(2)} мм&lt;/td&gt;&lt;td&gt;${have?&#x27;&lt;span class=&quot;ok&quot;&gt;есть&lt;/span&gt;&#x27;:&#x27;&lt;span class=&quot;dim&quot;&gt;нет&lt;/span&gt;&#x27;}&lt;/td&gt;&lt;/tr&gt;`;}
+  tab.innerHTML=rows;
+
+  let best=null;
+  for(const d of DS){const[lo,hi]=nRange(U,In,d);
+    for(let n=Math.max(1,lo);n&lt;=Math.min(8,hi);n++){ if(!fits(U,In,d,n)) continue;
+      if(!best||d&gt;best.d) best={d,n,lo,hi}; break; }}
+  if(best){
+    const nlo=best.n;
+    const t25=tMelt(best.d,(U===0.4?1.25:2)*In,nlo);
+    const loadLine=(U===0.4)
+      ?` · загрузка связки ${(In/(nlo*I1(best.d))*100).toFixed(0)} % от порога · при 1,25·In сгорит за ${fmt(t25)}`
+      :` · порог связки ${(nlo*I1(best.d)).toFixed(1)} А`;
+    need.innerHTML=`&lt;div class=&quot;dim&quot;&gt;нужная жилка при 1 нитке:&lt;/div&gt;&lt;div class=&quot;big ok&quot;&gt;⌀ ${win(U,In,1)[0].toFixed(2)} … ${win(U,In,1)[1].toFixed(2)} мм&lt;/div&gt;`;
+    V.innerHTML=`&lt;div class=&quot;verdict&quot;&gt;&lt;div class=&quot;big ok&quot;&gt;ЕСТЬ ПОДХОДЯЩАЯ&lt;/div&gt;
+      &lt;div&gt;Мотай &lt;b&gt;${nlo} ${nlo===1?&#x27;нитку&#x27;:&#x27;нитки&#x27;}&lt;/b&gt; ⌀${best.d.toFixed(2)} мм, одинаковой длины, свободный участок ≥ 50 мм.&lt;/div&gt;
+      &lt;div class=&quot;dim&quot;&gt;Суммарное сечение ${(nlo*SA(best.d)).toFixed(2)} мм²${loadLine}&lt;/div&gt;&lt;/div&gt;`;
+    showT(best.d,nlo,In);
+  } else {
+    const n1=Math.max(1,Math.round(In/I1(0.45)));
+    need.innerHTML=`&lt;div class=&quot;dim&quot;&gt;нужная жилка при 1 нитке:&lt;/div&gt;&lt;div class=&quot;big warn&quot;&gt;⌀ ${win(U,In,1)[0].toFixed(2)} … ${win(U,In,1)[1].toFixed(2)} мм&lt;/div&gt;`;
+    V.innerHTML=`&lt;div class=&quot;verdict no&quot;&gt;&lt;div class=&quot;big bad&quot;&gt;ПОДХОДЯЩЕЙ ЖИЛКИ НЕТ&lt;/div&gt;
+      &lt;div&gt;Ни один из имеющихся диаметров не попадает в окно. Мотать «что есть» нельзя: вставка либо сгорит на номинале, либо не сгорит при перегрузке.&lt;/div&gt;
+      &lt;div&gt;&lt;b&gt;Действие:&lt;/b&gt; связаться с мастером участка или главным инженером РЭС и получить добро на временную меру под конкретный ток, либо доставить штатную вставку.&lt;/div&gt;&lt;/div&gt;`;
+    document.getElementById(&#x27;tcard&#x27;).style.display=&#x27;none&#x27;;
+  }
+  if(U===10) checkTr(best,In);
+}
+function checkTr(best,In){
+  const box=document.getElementById(&#x27;verdict&#x27;);
+  let extra=&#x27;&#x27;;
+  if(best &amp;&amp; best.n*SA(best.d)&gt;1.0) extra=`&lt;div class=&quot;warnbox&quot;&gt;Суммарное сечение ${(best.n*SA(best.d)).toFixed(2)} мм² — разлёт горящей меди при её сгорании уже способен перекрыть фазы в отсеке 10 кВ. Только под согласованием и с расстоянием до соседних фаз.&lt;/div&gt;`;
+  box.insertAdjacentHTML(&#x27;beforeend&#x27;,extra);
+}
+function showT(d,n,In){
+  const mult=U===0.4?[1.0,1.11,1.25,1.6,2.5,5]:[1.0,2.0];
+  let h=&#x27;&lt;tr&gt;&lt;th&gt;ток&lt;/th&gt;&lt;th&gt;значение&lt;/th&gt;&lt;th&gt;сгорание&lt;/th&gt;&lt;/tr&gt;&#x27;;
+  for(const m of mult){const t=tMelt(d,m*In,n);
+    const hl=(U===10&amp;&amp;m===2.0)?&#x27; style=&quot;background:rgba(90,176,255,.12)&quot;&#x27;:&#x27;&#x27;;
+    h+=`&lt;tr${hl}&gt;&lt;td&gt;${m.toFixed(2).replace(/0$/,&#x27;&#x27;)}&amp;times;In&lt;/td&gt;&lt;td&gt;${(m*In).toFixed(0)} А&lt;/td&gt;&lt;td&gt;${fmt(t)}&lt;/td&gt;&lt;/tr&gt;`;}
+  document.getElementById(&#x27;ttab&#x27;).innerHTML=h;
+  const chk=document.getElementById(&#x27;tchk&#x27;);
+  if(U===10){const t2=tMelt(d,2.0*In,n);
+    chk.innerHTML=`&lt;b&gt;Проверка:&lt;/b&gt; при 2×In (${(2*In).toFixed(0)} А) выбранная комбинация сгорает за &lt;b&gt;${fmt(t2)}&lt;/b&gt; — `
+      +(t2&lt;=TMAX?&#x27;&lt;span class=&quot;ok&quot;&gt;лимит 5 мин выдержан&lt;/span&gt;&#x27;:&#x27;&lt;span class=&quot;bad&quot;&gt;лимит 5 мин превышен&lt;/span&gt;&#x27;)
+      +`. Порог связки ${(n*I1(d)).toFixed(1)} А при In ${In.toFixed(2)} А.`;}
+  else chk.innerHTML=&#x27;&#x27;;
+  document.getElementById(&#x27;tcard&#x27;).style.display=&#x27;block&#x27;;
+}
+DS.sort((a,b)=&gt;b-a); wind(); setU(0.4);
+&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;"></iframe>
+</div>
+<button class="calc-close" id="calcClose" onclick="closeCalc()" title="Закрыть калькулятор">✕</button>
+
+<script>
+const cards=[...document.querySelectorAll('.card')];
+const input=document.getElementById('search');
+const empty=document.getElementById('empty');
+input.addEventListener('input',()=>{
+  const q=input.value.trim().toLowerCase();
+  let shown=0;
+  cards.forEach(c=>{
+    const hay=(c.textContent+' '+(c.dataset.tags||'')).toLowerCase();
+    const ok=!q||hay.includes(q);
+    c.style.display=ok?'':'none';
+    if(ok)shown++;
+  });
+  empty.style.display=shown?'none':'block';
+});
+
+function openCalc(){
+  document.getElementById('calcModal').classList.add('on');
+  document.getElementById('calcClose').style.display='block';
+}
+function closeCalc(){
+  document.getElementById('calcModal').classList.remove('on');
+  document.getElementById('calcClose').style.display='none';
+}
+document.getElementById('calcClose').style.display='none';
+</script>
+</body>
+</html>
