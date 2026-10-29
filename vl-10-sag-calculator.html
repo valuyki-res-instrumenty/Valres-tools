@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1F3A5F">
 <title>ВЛ-10 кВ: Стрела провеса (полевой)</title>
 <style>
   body{font-family:Arial,sans-serif;max-width:640px;margin:18px auto;padding:0 10px;color:#222;background:#fff}
@@ -169,6 +171,9 @@ buildBtns('tempBtns', TEMPS, 'tMont', fmtT);
 document.getElementById('tMont').addEventListener('input', () => { syncSel('tempBtns', TEMPS, 'tMont', fmtT); });
 document.getElementById('spanCustom').addEventListener('input', () => { syncSel('spanBtns', SPANS, 'spanCustom', v => v); });
 window.onload = () => { syncSel('spanBtns', SPANS, 'spanCustom', v => v); syncSel('tempBtns', TEMPS, 'tMont', fmtT); calc(); };
+</script>
+<script>
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
 </script>
 </body>
 </html>
