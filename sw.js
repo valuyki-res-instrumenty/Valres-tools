@@ -1,45 +1,51 @@
-/* Сервисный работник: офлайн-кэш для калькулятора ВЛ-10 кВ */
-const CACHE_NAME = "res-instrumenty-v1";
+// Валрес-инструменты — сервисный скрипт PWA
+// Версия 2: в кэш добавлены все калькуляторы сайта
+const CACHE_NAME = 'valuyki-instruments-v2';
+
 const ASSETS = [
-  "vl-10-sag-calculator.html",
-  "index.html",
-  "manifest.json"
+  './',
+  './index.html',
+  './vl-10-sag-calculator.html',
+  './sag-04kv.html',
+  './kz-04kv.html',
+  './manifest.json'
 ];
 
-/* При первом открытии сохраняем страницу в кэш телефона */
-self.addEventListener("install", (event) => {
+// Установка: сохраняем все страницы сайта
+self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(ASSETS))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
-/* Запросы: сначала из кэша, при отсутствии — из сети */
-self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
+// Активация: удаляем старые версии кэша
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(
+        keys.filter((key) => key !== CACHE_NAME)
+            .map((key) => caches.delete(key))
+      ))
+      .then(() => self.clients.claim())
+  );
+});
+
+// Запросы: сначала кэш, параллельно тихо обновляем из сети
+self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((cached) => {
-      const fetchPromise = fetch(event.request)
+      const fetched = fetch(event.request)
         .then((response) => {
-          /* вышли в сеть — тихо обновляем кэш свежей версией */
-          if (response && response.status === 200) {
+          if (response && response.ok) {
             const copy = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
           }
           return response;
         })
         .catch(() => cached);
-      return cached || fetchPromise;
+      return cached || fetched;
     })
   );
-});
-
-/* Удаление старых версий кэша */
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
 });
