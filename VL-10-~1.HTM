@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ВЛ-10 кВ: Стрела провеса (полевой)</title>
+<style>
+  body{font-family:Arial,sans-serif;max-width:640px;margin:18px auto;padding:0 10px;color:#222;background:#fff}
+  h1{font-size:22px;margin:10px 0 6px}
+  .field{margin:12px 0}
+  label{display:block;font-weight:bold;margin-bottom:5px;font-size:15px}
+  select,input[type=number]{padding:8px;font-size:17px;border:1px solid #999;border-radius:6px;width:100px}
+  .btns{display:flex;flex-wrap:wrap;gap:7px}
+  .btns button{padding:11px 14px;font-size:16px;border:1px solid #aaa;border-radius:8px;background:#fff;cursor:pointer;min-width:52px}
+  .btns button.sel{background:#2b5fad;color:#fff;border-color:#2b5fad;font-weight:bold}
+  .go{width:100%;padding:14px;font-size:19px;font-weight:bold;color:#fff;background:#2b5fad;border:none;border-radius:10px;margin-top:14px;cursor:pointer}
+  h2{font-size:18px;margin:20px 0 6px}
+  h3{font-size:16px;margin:14px 0 4px}
+  .row{margin:4px 0;font-size:15px}
+  .ok{color:#0a7a0a;font-weight:bold} .bad{color:#b00020;font-weight:bold}
+  .note{color:#777;font-size:12px}
+  .icebox{background:#f4f6fa;border-radius:8px;padding:8px 10px;margin-top:6px}
+</style>
+</head>
+<body>
+<h1>ВЛ-10 кВ: Расчёт стрелы провеса</h1>
+<p>Норма габарита до земли: <b>7 м</b>.</p>
+
+<div class="field">
+  <label>Марка провода:</label>
+  <select id="wire">
+    <option selected>АС-35</option><option>АС-50</option><option>АС-70</option>
+    <option>АС-95</option><option>АС-120</option>
+  </select>
+</div>
+
+<div class="field">
+  <label>Длина пролёта:</label>
+  <div class="btns" id="spanBtns"></div>
+  <div style="margin-top:7px">или своё значение, м: <input type="number" id="spanCustom" min="20" max="200" step="1" value="60"></div>
+</div>
+
+<div class="field">
+  <label>Температура монтажа, °C:</label>
+  <div class="btns" id="tempBtns"></div>
+  <div style="margin-top:7px">или своё значение, °C: <input type="number" id="tMont" min="-60" max="50" step="1" value="20"></div>
+</div>
+
+<div class="field">
+  <label>Высота подвеса над землёй, м:</label>
+  <input type="number" id="hSus" value="9" step="0.1" style="width:100px">
+</div>
+
+<button class="go" onclick="calc()">Рассчитать</button>
+<div id="out"></div>
+
+<script>
+// ======= Ядро расчёта — методика серии 3.407-80м, как в версии для главного инженера =======
+const E = 8250.0;
+function solveSigma(A, B){
+  const f = s => s*s*s - A*s*s - B;
+  let lo = 0.01, hi = 1000;
+  for (let i = 0; i < 200; i++){ const m = (lo+hi)/2; if (f(lo)*f(m) <= 0) hi = m; else lo = m; }
+  return (lo+hi)/2;
+}
+function sigmaFrom(s0, t0, g0, t, g, l){
+  const A = s0 - E*g0*g0*l*l/(24*s0*s0) - (E*19.2e-6)*(t - t0);
+  return solveSigma(A, E*g*g*l*l/24);
+}
+const DATA = {
+  'АС-35':  {F: 43.0,  d: 8.4,  mass: 149, sT: 10.5, sM: 9.25},
+  'АС-50':  {F: 56.3,  d: 9.6,  mass: 195, sT: 8.0,  sM: 8.0},
+  'АС-70':  {F: 79.3,  d: 11.4, mass: 276, sT: 8.0,  sM: 8.0},
+  'АС-95':  {F: 111.3, d: 13.5, mass: 385, sT: 8.0,  sM: 8.0},
+  'АС-120': {F: 136.8, d: 15.2, mass: 471, sT: 8.0,  sM: 8.0}
+};
+function core(wire, span){
+  const W = DATA[wire], F = W.F, d = W.d;
+  const p1 = W.mass/1000;
+  const g1 = p1/F*1000;
+  const p2 = Math.PI*15*(d+15)*0.9*1e-3;
+  const gIce = (p1+p2)/F*1000;
+  const gWind = 50/3*(d+30)*1e-3/F*1000;
+  const gR1 = Math.sqrt(gIce*gIce + gWind*gWind);
+  const sTest = sigmaFrom(W.sM, -60, g1/1000, -5, gR1/1000, span);
+  let s0, t0, g0;
+  if (sTest <= W.sT + 0.005){ s0 = W.sM; t0 = -60; g0 = g1/1000; }
+  else { s0 = W.sT; t0 = -5; g0 = gR1/1000; }
+  return {s0, t0, g0, g1, gIce, gR1};
+}
+function sigmaAt(k, span, t, gOver1000){
+  return sigmaFrom(k.s0, k.t0, k.g0, t, (gOver1000 !== undefined ? gOver1000 : k.g1)/1000, span);
+}
+
+// ======= Интерфейс =======
+const SPANS = [30,40,50,60,70,80,90,100,120];
+const TEMPS = [-40,-30,-20,-10,0,10,20,30,40];
+
+function buildBtns(id, list, inpId, fmt){
+  const box = document.getElementById(id);
+  list.forEach(v => {
+    const b = document.createElement('button');
+    b.textContent = fmt(v);
+    b.onclick = () => {
+      document.getElementById(inpId).value = v;
+      [...box.children].forEach(x => x.classList.remove('sel'));
+      b.classList.add('sel');
+      calc();
+    };
+    box.appendChild(b);
+  });
+}
+function syncSel(id, list, inpId, fmt){
+  const box = document.getElementById(id);
+  const cur = parseFloat(document.getElementById(inpId).value);
+  [...box.children].forEach((x,i) => x.classList.toggle('sel', list[i] === cur));
+}
+
+function fmtT(v){ return (v > 0 ? '+' + v : (v === 0 ? '0' : '−' + Math.abs(v))); }
+
+function calc(){
+  const wire = document.getElementById('wire').value;
+  const span = parseFloat(document.getElementById('spanCustom').value);
+  const tM   = parseFloat(document.getElementById('tMont').value);
+  const hS   = parseFloat(document.getElementById('hSus').value);
+  const out  = document.getElementById('out');
+  if(!(span >= 20 && span <= 200)){ out.innerHTML = '<p class="bad">Пролёт должен быть от 20 до 200 м.</p>'; return; }
+  if(!(tM >= -60 && tM <= 50)){ out.innerHTML = '<p class="bad">Температура монтажа — от −60 до +50 °C.</p>'; return; }
+  if(!(hS > 0)){ out.innerHTML = '<p class="bad">Укажите высоту подвеса.</p>'; return; }
+
+  const k = core(wire, span);
+
+  const sM = sigmaAt(k, span, tM),                 fM  = k.g1/1000*span*span/(8*sM);
+  const sJ = sigmaAt(k, span, 40),                 fJ  = k.g1/1000*span*span/(8*sJ);
+  const sF = sigmaAt(k, span, -40),                fF  = k.g1/1000*span*span/(8*sF);
+  const sG1 = sigmaAt(k, span, -5, k.gIce),        fG1 = k.gIce/1000*span*span/(8*sG1);
+  const sG2 = sigmaAt(k, span, 5,  k.gIce),        fG2 = k.gIce/1000*span*span/(8*sG2);
+
+  const chk = v => v >= 7 ? '<span class="ok">Соответствует</span>' : '<span class="bad">НЕ соответствует</span>';
+  const risk = sF > 25 ? '<span class="bad">ВЫСОКИЙ</span>' : (sF > 15 ? '<span class="bad">Есть</span>' : '<span class="ok">Нет</span>');
+
+  out.innerHTML =
+    '<h2>Результаты расчёта</h2>'
+   +'<h3>Режим монтажа (t = ' + fmtT(tM) + ' °C)</h3>'
+   +'<div class="row">Тяжение: <b>' + sM.toFixed(2) + ' кг/мм²</b></div>'
+   +'<div class="row">Стрела провеса: <b>' + fM.toFixed(3) + ' м</b></div>'
+   +'<h3>Режим «Жара» (+40 °C)</h3>'
+   +'<div class="row">Стрела провеса: <b>' + fJ.toFixed(3) + ' м</b></div>'
+   +'<div class="row">Габарит до земли: <b>' + (hS - fJ).toFixed(2) + ' м</b></div>'
+   +'<div class="row">Норма (7 м): ' + chk(hS - fJ) + '</div>'
+   +'<h3>Режим «Мороз» (−40 °C)</h3>'
+   +'<div class="row">Тяжение: <b>' + sF.toFixed(2) + ' кг/мм²</b></div>'
+   +'<div class="row">Предел прочности: <b>25 кг/мм²</b></div>'
+   +'<div class="row">Риск обрыва: ' + risk + '</div>'
+   +'<h3>Режим «Гололёд» (b = 15 мм)</h3>'
+   +'<div class="icebox">'
+   +'<div class="row">t = −5 °C: тяжение <b>' + sG1.toFixed(2) + ' кг/мм²</b>, стрела <b>' + fG1.toFixed(3) + ' м</b>, '
+   +'габарит <b>' + (hS - fG1).toFixed(2) + ' м</b> — ' + chk(hS - fG1) + ' <span class="note">(допуск ' + DATA[wire].sT + ' кг/мм²)</span></div>'
+   +'<div class="row">t = +5 °C: тяжение <b>' + sG2.toFixed(2) + ' кг/мм²</b>, стрела <b>' + fG2.toFixed(3) + ' м</b>, '
+   +'габарит <b>' + (hS - fG2).toFixed(2) + ' м</b> — ' + chk(hS - fG2) + '</div>'
+   +'</div>';
+
+  syncSel('spanBtns', SPANS, 'spanCustom', v => v);
+  syncSel('tempBtns', TEMPS, 'tMont', fmtT);
+}
+
+buildBtns('spanBtns', SPANS, 'spanCustom', v => v);
+buildBtns('tempBtns', TEMPS, 'tMont', fmtT);
+document.getElementById('tMont').addEventListener('input', () => { syncSel('tempBtns', TEMPS, 'tMont', fmtT); });
+document.getElementById('spanCustom').addEventListener('input', () => { syncSel('spanBtns', SPANS, 'spanCustom', v => v); });
+window.onload = () => { syncSel('spanBtns', SPANS, 'spanCustom', v => v); syncSel('tempBtns', TEMPS, 'tMont', fmtT); calc(); };
+</script>
+</body>
+</html>
