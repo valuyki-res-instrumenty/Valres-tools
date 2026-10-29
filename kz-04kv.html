@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1F3A5F">
+<title>КЗ фаза–ноль 0,4 кВ</title>
+<style>
+  body{font-family:-apple-system,Arial,sans-serif;margin:0;background:#f0f4f8;color:#222}
+  header{background:#1F3A5F;color:#fff;padding:16px;text-align:center}
+  header h1{margin:0;font-size:1.2em}
+  .wrap{max-width:520px;margin:0 auto;padding:12px}
+  .card{background:#fff;border-radius:10px;padding:14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  .card h2{font-size:1em;margin:0 0 10px;color:#1F3A5F}
+  label{display:block;margin:8px 0 4px;font-size:.9em;color:#444}
+  select,input[type=number],input[type=text]{width:100%;padding:10px;font-size:1em;border:1px solid #ccc;border-radius:8px;box-sizing:border-box;background:#fff}
+  .radio{display:flex;gap:8px;margin:6px 0}
+  .radio label{flex:1;margin:0;padding:10px;border:1px solid #ccc;border-radius:8px;text-align:center;font-size:.85em;cursor:pointer;background:#fff}
+  .radio input{display:none}
+  .radio input:checked+span{font-weight:bold;color:#1F3A5F}
+  .radio label:has(input:checked){border-color:#1F3A5F;background:#eef3fa}
+  button{width:100%;padding:14px;font-size:1.05em;background:#F5C518;border:none;border-radius:10px;font-weight:bold;color:#1F3A5F;cursor:pointer;margin-top:10px}
+  .res{margin-top:12px;padding:12px;border-radius:10px;background:#eef3fa;display:none}
+  .res .big{font-size:1.5em;font-weight:bold;color:#1F3A5F}
+  .res .row{margin:6px 0;font-size:.95em}
+  .warn{color:#a33;font-size:.9em;margin-top:8px;display:none}
+  .note{font-size:.8em;color:#666;margin-top:10px}
+</style>
+</head>
+<body>
+<header><h1>⚡ Ток КЗ фаза–ноль, 0,4 кВ<br>выбор автомата по тепловому расцепителю</h1></header>
+<div class="wrap">
+
+<div class="card">
+  <h2>Трансформатор КТП</h2>
+  <label>Группа соединения обмоток</label>
+  <div class="radio">
+    <label><input type="radio" name="grp" value="YY" checked><span>Y/Yн–0</span></label>
+    <label><input type="radio" name="grp" value="YZ"><span>Y/Zн–11</span></label>
+  </div>
+  <label>Мощность трансформатора, кВА</label>
+  <select id="power"></select>
+</div>
+
+<div class="card">
+  <h2>Линия 0,4 кВ</h2>
+  <label>Тип проводов</label>
+  <div class="radio">
+    <label><input type="radio" name="wire" value="sip" checked onchange="onWire()"><span>СИП 2</span></label>
+    <label><input type="radio" name="wire" value="bare" onchange="onWire()"><span>Голые провода (А)</span></label>
+  </div>
+
+  <div id="sipBlock">
+    <label>Марка СИП 2</label>
+    <select id="sipMark"></select>
+    <label>Режим расчёта</label>
+    <div class="radio">
+      <label><input type="radio" name="smode" value="main" checked><span>Фаза–ноль<br>(основной автомат)</span></label>
+      <label><input type="radio" name="smode" value="light"><span>Освещение–ноль<br>(автомат НО)</span></label>
+    </div>
+  </div>
+
+  <div id="bareBlock" style="display:none">
+    <label>Фазный провод</label>
+    <select id="ph" onchange="onPh()"></select>
+    <label>Нулевой провод</label>
+    <select id="nu"></select>
+  </div>
+
+  <label>Длина участка от КТП до места замыкания, м</label>
+  <input type="number" id="len" min="1" step="1" placeholder="например 525">
+</div>
+
+<button onclick="calc()">Рассчитать</button>
+<div class="warn" id="warn"></div>
+
+<div class="res" id="res">
+  <div class="row">Сопротивление трансформатора Zт/3: <b id="rZt"></b> Ом</div>
+  <div class="row">Сопротивление петли линии: <b id="rZl"></b> Ом</div>
+  <div class="row">Полное сопротивление петли: <b id="rZ"></b> Ом</div>
+  <div class="row" style="margin-top:10px">Ток однофазного КЗ:</div>
+  <div class="big" id="rI"></div>
+  <div class="row" style="margin-top:10px">Номинал защитного аппарата <b>не более</b> <b id="rNom"></b> А (Iк/3)</div>
+  <div class="row">Стандартный номинал автомата: <b id="rStd"></b></div>
+  <div class="note">Расчёт по условию срабатывания теплового расцепителя: Iк ≥ 3·Iном (табл. 10.4). Окончательный выбор — с учётом кратности 1,1–1,4 для автоматов с тепловым расцепителем и проверки электромагнитного расцепителя.</div>
+</div>
+
+<div class="note">Контрольная точка: Y/Yн–0, 100 кВА, А35/А25, 525 м → Z = 1,625 Ом, Iк = 135,4 А, автомат не более 45 А.</div>
+</div>
+
+<script>
+var ZT_YY={20:1.38,25:1.04,30:0.9,40:0.65,50:0.54,60:0.43,63:0.41,100:0.26,160:0.16,180:0.15,250:0.104,320:0.084,400:0.065,560:0.048,630:0.043,750:0.036,1000:0.027,1600:0.018};
+var ZT_YZ={25:0.3,40:0.19,63:0.12,100:0.075,160:0.047,250:0.03};
+var W=['А16','А25','А35','А50','А70','А95','А120'];
+var T103={'А16':{'А16':4.87,'А25':4.04},
+'А25':{'А16':4.04,'А25':3.21,'А35':2.79,'А50':2.46},
+'А35':{'А16':3.62,'А25':2.79,'А35':2.57,'А50':2.05,'А70':1.82},
+'А50':{'А16':3.28,'А25':2.46,'А35':2.05,'А50':1.73,'А70':1.53,'А95':1.4},
+'А70':{'А25':2.25,'А35':1.82,'А50':1.53,'А70':1.34,'А95':1.21,'А120':1.14},
+'А95':{'А25':2.11,'А35':1.71,'А50':1.4,'А70':1.21,'А95':1.09,'А120':1.03},
+'А120':{'А35':1.63,'А50':1.33,'А70':1.14,'А95':1.03,'А120':0.93}};
+var SIP=[{l:'3×25+54,6+16',rf:1.2,r0:0.541},{l:'3×35+54,6+16',rf:0.868,r0:0.541},{l:'3×70+54,6+16',rf:0.443,r0:0.541},{l:'3×70+70+16',rf:0.443,r0:0.443},{l:'3×95+70+16',rf:0.32,r0:0.443},{l:'3×120+70+16',rf:0.253,r0:0.443}];
+var RLIGHT=1.91;
+var STD=[6,8,10,16,20,25,32,40,50,63,80,100,125,160,200,250];
+
+function fillSel(id,arr,val){var s=document.getElementById(id);s.innerHTML='';for(var i=0;i<arr.length;i++){var o=document.createElement('option');o.value=(typeof arr[i]==='object')?i:arr[i];o.textContent=(typeof arr[i]==='object')?arr[i].l:arr[i];if(o.value==val)s.appendChild(o);else s.appendChild(o);} }
+function fillPower(){var g=document.querySelector('input[name=grp]:checked').value;var d=(g==='YY')?ZT_YY:ZT_YZ;var keys=Object.keys(d).map(Number).sort(function(a,b){return a-b});var s=document.getElementById('power');var cur=s.value;s.innerHTML='';keys.forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=k;s.appendChild(o);});if(cur&&d[cur])s.value=cur;else s.value=keys[Math.floor(keys.length/2)];}
+
+function init(){fillSel('sipMark',SIP,'0');fillSel('ph',W,'А35');onPh();fillPower();}
+function onWire(){var v=document.querySelector('input[name=wire]:checked').value;document.getElementById('sipBlock').style.display=(v==='sip')?'':'none';document.getElementById('bareBlock').style.display=(v==='bare')?'':'none';}
+function onPh(){var p=document.getElementById('ph').value;var ok=Object.keys(T103[p]);var s=document.getElementById('nu');var cur=s.value;s.innerHTML='';ok.forEach(function(w){var o=document.createElement('option');o.value=w;o.textContent=w;s.appendChild(o);});if(ok.indexOf(cur)>=0)s.value=cur;}
+document.querySelectorAll('input[name=grp]').forEach(function(r){r.addEventListener('change',fillPower);});
+
+function calc(){
+  var warn=document.getElementById('warn'),res=document.getElementById('res');
+  warn.style.display='none';res.style.display='none';
+  var L=parseFloat(document.getElementById('len').value);
+  if(!(L>0)){warn.textContent='Введите длину участка, м';warn.style.display='block';return;}
+  var g=document.querySelector('input[name=grp]:checked').value;
+  var P=parseFloat(document.getElementById('power').value);
+  var Zt=(g==='YY')?ZT_YY[P]:ZT_YZ[P];
+  var w=document.querySelector('input[name=wire]:checked').value;
+  var Zl,detail;
+  if(w==='sip'){
+    var m=SIP[document.getElementById('sipMark').value];
+    var mode=document.querySelector('input[name=smode]:checked').value;
+    if(mode==='main'){Zl=(m.rf+m.r0)*L/1000;detail='СИП '+m.l+': фаза '+m.rf+' + несущая '+m.r0+' = '+(m.rf+m.r0).toFixed(3)+' Ом/км';}
+    else{Zl=(RLIGHT+m.r0)*L/1000;detail='Осветительная жила 16 мм²: '+RLIGHT+' + несущая '+m.r0+' = '+(RLIGHT+m.r0).toFixed(3)+' Ом/км';}
+  }else{
+    var p=document.getElementById('ph').value,n=document.getElementById('nu').value;
+    if(!T103[p][n]){warn.textContent='Сочетание '+p+' / '+n+' не предусмотрено таблицей 10.3 — выберите другой нулевой провод';warn.style.display='block';return;}
+    Zl=T103[p][n]*L/1000;detail=p+' / '+n+': '+T103[p][n]+' Ом/км';
+  }
+  var Z=Zt+Zl, I=220/Z, Imax=I/3;
+  var std=null;for(var i=STD.length-1;i>=0;i--){if(STD[i]<=Imax){std=STD[i];break;}}
+  document.getElementById('rZt').textContent=fmt(Zt);
+  document.getElementById('rZl').textContent=fmt(Zl)+' ('+detail+')';
+  document.getElementById('rZ').textContent=fmt(Z);
+  document.getElementById('rI').textContent=I.toFixed(1)+' А';
+  document.getElementById('rNom').textContent=Imax.toFixed(1);
+  document.getElementById('rStd').textContent=std?(' '+std+' А'):'нет в стандартном ряду';
+  res.style.display='block';
+}
+function fmt(x){return (x>=10)?x.toFixed(2):x.toFixed(3);}
+
+init();
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){});}
+</script>
+</body>
+</html>
