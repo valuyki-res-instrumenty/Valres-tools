@@ -41,9 +41,16 @@
   <option>А-50</option><option>А-70</option><option>А-95</option><option>А-120</option>
  </select>
 
- <label>Длина пролёта, м (20–60 м; допустим ввод 1–60, ниже 20 м — ориентировочно)</label>
- <input id="span" list="spans" type="number" step="0.5" min="1" max="60" value="30">
- <datalist id="spans"><option>20</option><option>25</option><option>30</option><option>35</option><option>40</option><option>45</option><option>50</option><option>55</option><option>60</option></datalist>
+ <label>Длина пролёта, м (шаг 5 м или своё значение)</label>
+ <select id="ssel" onchange="scustom()">
+  <option>20</option><option>25</option><option value="30" selected>30</option><option>35</option>
+  <option>40</option><option>45</option><option>50</option><option>55</option><option>60</option>
+  <option value="custom">своё значение…</option>
+ </select>
+ <div id="scustombox" class="hidden">
+  <label style="margin-top:6px">Своё значение длины пролёта (допустим ввод 1–60 м; ниже 20 м — ориентировочно)</label>
+  <input id="span" type="number" step="0.5" min="1" max="60" value="25">
+ </div>
 
  <label>Температура монтажа, °C (шаг 10 °C или своё значение)</label>
  <select id="tsel" onchange="tcustom()">
@@ -86,12 +93,18 @@ function solve(L,gamma,t,si,gi,ti,F){
  return {s:s, f:gamma*L*L/(8*s), T:s*F};
 }
 function tcustom(){document.getElementById('tcustombox').classList.toggle('hidden',document.getElementById('tsel').value!=='custom');}
+function scustom(){document.getElementById('scustombox').classList.toggle('hidden',document.getElementById('ssel').value!=='custom');}
+function getSpan(){
+ const sel=document.getElementById('ssel');
+ if(sel.value==='custom'){return parseFloat(String(document.getElementById('span').value).replace(',','.'));}
+ return parseFloat(sel.value);
+}
 function row(a,b){return '<div class="row"><span>'+a+'</span><span>'+b+'</span></div>';}
 function status(gab){return gab>=6.0?'<span class="ok">Соответствует</span>':'<span class="bad">Не соответствует</span>';}
 function calc(){
  const out=document.getElementById('out');
  const mark=document.getElementById('mark').value, p=W[mark];
- const L=parseFloat(String(document.getElementById('span').value).replace(',','.'));
+ const L=getSpan();
  const h=parseFloat(String(document.getElementById('h').value).replace(',','.'));
  let t;
  if(document.getElementById('tsel').value==='custom'){t=parseFloat(String(document.getElementById('tval').value).replace(',','.'));}
@@ -146,6 +159,7 @@ function calc(){
  out.innerHTML=html;
 }
 tcustom();
+scustom();
 </script>
 </body>
 </html>
