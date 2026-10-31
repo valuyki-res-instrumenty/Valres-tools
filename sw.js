@@ -1,6 +1,6 @@
 // Валрес-инструменты — сервисный скрипт PWA
-// Версия 2: в кэш добавлены все калькуляторы сайта
-const CACHE_NAME = 'valuyki-instruments-v2';
+// Версия 3: сброс кэша после обновления калькулятора стрел провеса 0,4 кВ
+const CACHE_NAME = 'valuyki-instruments-v3';
 
 const ASSETS = [
   './',
