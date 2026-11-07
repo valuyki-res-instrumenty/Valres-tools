@@ -1,10 +1,12 @@
 // Валрес-инструменты — сервисный скрипт PWA
-// Версия 3: сброс кэша после обновления калькулятора стрел провеса 0,4 кВ
-const CACHE_NAME = 'valuyki-instruments-v3';
+// Версия 4: добавлены калькуляторы стрел провеса СИП-2 и СИП-4
+const CACHE_NAME = 'valuyki-instruments-v4';
 
 const ASSETS = [
   './',
   './index.html',
+  './sip2_calc_mobile.html',
+  './sip4_calc_mobile.html',
   './vl-10-sag-calculator.html',
   './sag-04kv.html',
   './kz-04kv.html',
