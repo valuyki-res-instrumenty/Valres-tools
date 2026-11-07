@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Калькулятор СИП-4 — стрела провеса (54 МПа)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; background:#eef1f6; color:#1a2332; padding:14px; max-width:640px; margin:0 auto; }
+  h1 { font-size:22px; color:#1d4f8c; margin:6px 0 14px; line-height:1.3; }
+  .card { background:#fff; border-radius:12px; padding:16px; margin-bottom:14px; box-shadow:0 1px 4px rgba(20,40,80,.08); }
+  .intro { border-left:5px solid #1d4f8c; }
+  .intro h2 { font-size:16px; color:#1d4f8c; margin-bottom:10px; }
+  .intro li { font-size:13.5px; line-height:1.5; margin-bottom:9px; }
+  .intro ul { padding-left:18px; }
+  label { display:block; font-size:13.5px; font-weight:600; margin:14px 0 5px; }
+  label:first-of-type { margin-top:2px; }
+  select, input { width:100%; padding:11px 12px; font-size:16px; border:1px solid #c8d2e0; border-radius:9px; background:#fff; }
+  input:focus, select:focus { outline:2px solid #1d4f8c; outline-offset:1px; }
+  .hint { font-size:11.5px; color:#7a8798; margin-top:4px; }
+  button { width:100%; margin-top:18px; padding:14px; font-size:17px; font-weight:700; color:#fff; background:#1d4f8c; border:none; border-radius:10px; cursor:pointer; }
+  button:active { background:#163e6f; }
+  h2.sec { font-size:16px; color:#1d4f8c; margin-bottom:10px; }
+  .row { display:flex; justify-content:space-between; align-items:baseline; padding:7px 0; border-bottom:1px solid #edf1f6; font-size:14.5px; }
+  .row:last-child { border-bottom:none; }
+  .row .v { font-weight:700; font-size:15.5px; white-space:nowrap; }
+  .row .v small { font-weight:400; font-size:12px; color:#7a8798; }
+  .verdict { margin-top:10px; padding:10px 12px; border-radius:8px; font-size:14px; font-weight:600; }
+  .ok { background:#e8f5e9; color:#1b5e20; border-left:4px solid #2e7d32; }
+  .bad { background:#fdecea; color:#b71c1c; border-left:4px solid #c62828; }
+  .conclusion { background:#eaf2fb; border-radius:9px; padding:12px; margin-top:12px; font-size:14.5px; line-height:1.55; }
+  .conclusion b { color:#1d4f8c; }
+  .note { font-size:12px; color:#7a8798; margin-top:9px; }
+  details { margin-top:12px; border-top:1px dashed #c8d2e0; padding-top:10px; }
+  summary { font-size:13px; color:#1d4f8c; cursor:pointer; font-weight:600; }
+  details .row { font-size:13px; }
+  details .row .v { font-size:13.5px; font-weight:600; }
+  #result { display:none; }
+  .final { border-left:5px solid #2e7d32; background:#f2f9f3; }
+  .final h2 { color:#1b5e20; font-size:15.5px; margin-bottom:8px; }
+  .final p { font-size:13.5px; line-height:1.55; }
+  .err { background:#fdecea; color:#b71c1c; padding:12px; border-radius:8px; font-size:14px; display:none; margin-bottom:12px; }
+</style>
+</head>
+<body>
+<h1>Калькулятор СИП-4 — стрела провеса (54 МПа)</h1>
+
+<div class="card intro">
+  <h2>Основные принципы подхода</h2>
+  <ul>
+    <li><b>Допустимое напряжение.</b> Максимально допустимое напряжение несущих жил СИП-4 &sigma;<sub>доп</sub> = <b>54 МПа</b> (ГОСТ 31946-2012: растягивающее усилие не более 40% от разрывного). Это соответствует тяжению <b>172,8 даН</b> (2×16, S = 32 мм²) и <b>345,6 даН</b> (4×16, S = 64 мм²). За базовое состояние принято напряжение 54 МПа при морозе <b>&minus;40 °С</b>.</li>
+    <li><b>Гололёд не рвёт провод.</b> При этой базе напряжение в гололёдных режимах не превышает 54 МПа ни на одном пролёте (максимум &asymp; 50,6 МПа у 2×16 и &asymp; 48,6 МПа у 4×16). Ограничивающим фактором в гололёд является <b>габарит до земли</b>, а не прочность.</li>
+    <li><b>Климатика и габарит.</b> Нормативный габарит до земли — <b>не менее 6 м</b>; климатические параметры приняты согласно ПУЭ (7-е изд., гл. 2.5) и СП 107.13330: стенка льда b = <b>15 мм</b> (II район по гололёду), ветровой напор q<sub>н</sub> = <b>500 Па</b>. Габарит = высота подвеса минус стрела провеса.</li>
+    <li><b>Почему у 4×16 в гололёд стрела меньше.</b> Лёд нарастает по поверхности жгута (на 4×16 его даже больше — 2,1 против 1,9 даН/м), но несущая способность растёт с сечением: сечение 4×16 вдвое больше, а диаметр жгута — лишь на 21%. Поэтому на единицу сечения гололёдная нагрузка у 4×16 меньше (0,37 против 0,65 МПа/м), и стрела провеса меньше.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <label for="wire">Марка провода</label>
+  <select id="wire">
+    <option value="2x16">СИП-4 2×16</option>
+    <option value="4x16">СИП-4 4×16</option>
+  </select>
+
+  <label for="span_sel">Длина пролёта, м</label>
+  <select id="span_sel" onchange="customToggle('span')">
+    <option value="10">10</option><option value="15">15</option><option value="20">20</option>
+    <option value="25">25</option><option value="30" selected>30</option>
+    <option value="35">35</option><option value="39">39</option>
+    <option value="__custom">Своё значение…</option>
+  </select>
+  <input type="number" id="span" value="30" min="1" max="120" step="0.5" inputmode="decimal" style="display:none">
+  <div class="hint" id="span_hint">Выберите из списка или впишите своё значение</div>
+
+  <label for="tmont_sel">Температура монтажа, °С</label>
+  <select id="tmont_sel" onchange="customToggle('tmont')">
+    <option value="-40">-40</option><option value="-35">-35</option><option value="-30">-30</option><option value="-25">-25</option><option value="-20">-20</option><option value="-15">-15</option><option value="-10">-10</option><option value="-5">-5</option><option value="0">0</option><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20" selected>20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option>
+    <option value="__custom">Своё значение…</option>
+  </select>
+  <input type="number" id="tmont" value="20" min="-50" max="50" step="1" inputmode="decimal" style="display:none">
+  <div class="hint" id="tmont_hint">Выберите из списка или впишите своё значение</div>
+
+  <label for="h">Высота подвеса провода над землёй, м</label>
+  <select id="h">
+    <option value="7">7 — опора СВ-95</option>
+    <option value="9">9 — опора СВ-110</option>
+  </select>
+
+  <button onclick="calc()">Рассчитать</button>
+</div>
+
+<div class="err" id="err"></div>
+<div id="result">
+
+  <div class="card">
+    <h2 class="sec" id="t1">1) МОНТАЖ</h2>
+    <div class="row"><span>f, м</span><span class="v" id="m_f"></span></div>
+    <div class="row"><span>T, даН (при монтаже)</span><span class="v" id="m_T"></span></div>
+    <div class="conclusion" id="m_conc"></div>
+    <div class="note">Стрелу выставляют визированием; тяжение — контрольное, за несущие жилы.</div>
+  </div>
+
+  <div class="card">
+    <h2 class="sec">2) ЛЕТО +40 °С</h2>
+    <div class="row"><span>f, м</span><span class="v" id="s_f"></span></div>
+    <div class="row"><span>Габарит до земли</span><span class="v" id="s_g"></span></div>
+    <div class="verdict" id="s_v"></div>
+  </div>
+
+  <div class="card">
+    <h2 class="sec">3) МОРОЗ &minus;40 °С (базовый режим)</h2>
+    <div class="row"><span>f, м</span><span class="v" id="c_f"></span></div>
+    <div class="row"><span>T, даН</span><span class="v" id="c_T"></span></div>
+    <div class="row"><span>Габарит до земли</span><span class="v" id="c_g"></span></div>
+    <div class="verdict" id="c_v"></div>
+  </div>
+
+  <div class="card">
+    <h2 class="sec">4) ГОЛОЛЁД &minus;5 °С (стенка льда 15 мм, с ветром)</h2>
+    <div class="row"><span>f, м</span><span class="v" id="i_f"></span></div>
+    <div class="row"><span>T, даН</span><span class="v" id="i_T"></span></div>
+    <div class="row"><span>Габарит до земли</span><span class="v" id="i_g"></span></div>
+    <div class="verdict" id="i_vs"></div>
+    <div class="verdict" id="i_vg" style="margin-top:8px"></div>
+    <details>
+      <summary>Параметры гололёдного режима</summary>
+      <div class="row"><span>Pл (лёд 15 мм), даН/м</span><span class="v" id="d_Pl"></span></div>
+      <div class="row"><span>Pв (ветер), даН/м</span><span class="v" id="d_Pv"></span></div>
+      <div class="row"><span>&gamma;1 (без гололёда), МПа/м</span><span class="v" id="d_g1"></span></div>
+      <div class="row"><span>&gamma;2 (гололёд+ветер), МПа/м</span><span class="v" id="d_g2"></span></div>
+      <div class="row"><span>&gamma;2 без ветра, МПа/м</span><span class="v" id="d_g2n"></span></div>
+      <div class="row"><span>A = E·&gamma;²·a²/24</span><span class="v" id="d_A"></span></div>
+      <div class="row"><span>C = &sigma;<sub>доп</sub> &minus; A/&sigma;<sub>доп</sub>²</span><span class="v" id="d_C"></span></div>
+      <div class="row"><span>B = C &minus; &alpha;·E·(t&minus;t<sub>баз</sub>)</span><span class="v" id="d_B"></span></div>
+    </details>
+  </div>
+
+  <div class="card final">
+    <h2>ИТОГ ОДНОЙ ФРАЗОЙ (для наряда / переписки)</h2>
+    <p id="final_text"></p>
+  </div>
+
+</div>
+
+<script>
+var E = 57900, AL = 2.3e-5, SDOP = 54, TBASE = -40;
+var RHO = 0.9, KL = 1.3, QN = 500, KV = 0.25, TICE = -5, BB = 15;
+var W = { '2x16': {p:0.10, S:32, D:19, name:'СИП-4 2×16'},
+          '4x16': {p:0.19, S:64, D:23, name:'СИП-4 4×16'} };
+
+function solveSigma(A, B) {
+  // sigma^3 - B*sigma^2 - A = 0: единственный положительный корень, бисекция
+  var f = function(s){ return s*s*s - B*s*s - A; };
+  var lo = 1e-9, hi = 1;
+  while (f(hi) < 0) hi *= 2;
+  for (var i = 0; i < 200; i++) {
+    var m = 0.5*(lo+hi);
+    if (f(m) < 0) lo = m; else hi = m;
+  }
+  return 0.5*(lo+hi);
+}
+
+function fmt(n, d) {
+  return n.toFixed(d === undefined ? 2 : d).replace('.', ',');
+}
+
+function getVal(selId, inpId) {
+  var sel = document.getElementById(selId);
+  return sel.value === '__custom' ? document.getElementById(inpId).value : sel.value;
+}
+
+function customToggle(prefix) {
+  var sel = document.getElementById(prefix + '_sel');
+  var inp = document.getElementById(prefix);
+  var hint = document.getElementById(prefix + '_hint');
+  if (sel.value === '__custom') {
+    inp.style.display = 'block';
+    hint.textContent = 'Впишите своё значение и подтвердите (Enter или клик вне поля)';
+    inp.focus();
+  } else {
+    inp.style.display = 'none';
+    hint.textContent = 'Выберите из списка или впишите своё значение';
+  }
+  calc();
+}
+
+function calc() {
+  var err = document.getElementById('err');
+  var res = document.getElementById('result');
+  var w = W[document.getElementById('wire').value];
+  var a = parseFloat(String(getVal('span_sel', 'span')).replace(',', '.'));
+  var t = parseFloat(String(getVal('tmont_sel', 'tmont')).replace(',', '.'));
+  var H = parseFloat(document.getElementById('h').value);
+  if (!(a > 0) || isNaN(t)) {
+    err.style.display = 'block';
+    err.textContent = 'Введите корректные значения: пролёт — положительное число, температура — число.';
+    res.style.display = 'none';
+    return;
+  }
+  err.style.display = 'none';
+
+  var g1 = 10*w.p/w.S;
+  var Pl = KL*RHO*Math.PI*BB*(w.D+BB)/1000;
+  var Pv = KV*QN*(w.D+2*BB)/10000;
+  var g2 = 10*Math.sqrt((w.p+Pl)*(w.p+Pl) + Pv*Pv)/w.S;
+  var g2n = 10*(w.p+Pl)/w.S;
+
+  function mode(g, tt) {
+    var A = E*g*g*a*a/24;
+    var C = SDOP - A/(SDOP*SDOP);
+    var B = C - AL*E*(tt - TBASE);
+    var s = solveSigma(A, B);
+    return { s: s, f: g*a*a/(8*s), T: s*w.S/10, A: A, C: C, B: B };
+  }
+
+  var m = mode(g1, t);
+  var sum = mode(g1, 40);
+  var cold = mode(g1, TBASE);
+  var ice = mode(g2, TICE);
+
+  var vg = function(fv) {
+    var g = H - fv;
+    return { g: g, ok: g >= 6,
+      txt: g >= 6 ? 'Вердикт по габариту: Норма (≥ 6 м)'
+                  : 'Вердикт по габариту: МЕНЕЕ 6 м — СВ-110 (9 м) или завышенная траверса' };
+  };
+
+  function setV(id, cls, txt) {
+    var el = document.getElementById(id);
+    el.textContent = txt;
+    el.className = 'verdict ' + cls;
+  }
+
+  document.getElementById('t1').textContent = '1) МОНТАЖ при ' + (t > 0 ? '+' : '') + fmt(t,0) + ' °С';
+  document.getElementById('m_f').textContent = fmt(m.f, 2) + ' м';
+  document.getElementById('m_T').textContent = fmt(m.T, 1) + ' даН';
+  document.getElementById('m_conc').innerHTML = '→ ВЫВОД: при монтаже при <b>' + (t > 0 ? '+' : '') + fmt(t,0) +
+    ' °С</b> выставить стрелу провеса <b>f = ' + fmt(m.f,2) + ' м</b> (тяжение ' + fmt(m.T,1) + ' даН).';
+
+  document.getElementById('s_f').textContent = fmt(sum.f, 2) + ' м';
+  var sv = vg(sum.f);
+  document.getElementById('s_g').textContent = fmt(sv.g, 2) + ' м';
+  setV('s_v', sv.ok ? 'ok' : 'bad', sv.txt);
+
+  document.getElementById('c_f').textContent = fmt(cold.f, 2) + ' м';
+  document.getElementById('c_T').textContent = fmt(cold.T, 1) + ' даН';
+  var cv = vg(cold.f);
+  document.getElementById('c_g').textContent = fmt(cv.g, 2) + ' м';
+  setV('c_v', cv.ok ? 'ok' : 'bad', cv.txt);
+
+  document.getElementById('i_f').textContent = fmt(ice.f, 2) + ' м';
+  document.getElementById('i_T').textContent = fmt(ice.T, 1) + ' даН';
+  var iv = vg(ice.f);
+  document.getElementById('i_g').textContent = fmt(iv.g, 2) + ' м';
+  setV('i_vs', 'ok', 'Вердикт по прочности: не превышает допустимого (54 МПа)');
+  setV('i_vg', iv.ok ? 'ok' : 'bad', iv.txt);
+
+  document.getElementById('d_Pl').textContent = fmt(Pl, 2);
+  document.getElementById('d_Pv').textContent = fmt(Pv, 2);
+  document.getElementById('d_g1').textContent = fmt(g1, 4);
+  document.getElementById('d_g2').textContent = fmt(g2, 4);
+  document.getElementById('d_g2n').textContent = fmt(g2n, 4);
+  document.getElementById('d_A').textContent = fmt(ice.A, 1);
+  document.getElementById('d_C').textContent = fmt(ice.C, 2);
+  document.getElementById('d_B').textContent = fmt(ice.B, 2);
+
+  var ft = '1) МОНТАЖ при ' + (t > 0 ? '+' : '') + fmt(t,0) + ' °С — выставить стрелу провеса f = ' + fmt(m.f,2) +
+    ' м (тяжение ' + fmt(m.T,1) + ' даН). 2) Летом при +40 °С: стрела ' + fmt(sum.f,2) + ' м, габарит ' + fmt(sv.g,2) +
+    ' м — ' + (sv.ok ? 'Норма (≥ 6 м).' : 'МЕНЕЕ 6 м — СВ-110 (9 м) или завышенная траверса.') +
+    ' 3) Мороз −40 °С: стрела ' + fmt(cold.f,2) + ' м, габарит ' + fmt(cv.g,2) + ' м, тяжение ' + fmt(cold.T,1) +
+    ' даН — ' + (cv.ok ? 'Норма (≥ 6 м).' : 'МЕНЕЕ 6 м — СВ-110 (9 м) или завышенная траверса.') +
+    ' 4) Гололёд при −5 °С (стенка 15 мм, с ветром): стрела ' + fmt(ice.f,2) + ' м, габарит ' + fmt(iv.g,2) +
+    ' м (' + (iv.ok ? 'Норма (≥ 6 м)' : 'МЕНЕЕ 6 м — СВ-110 (9 м) или завышенная траверса') + '), тяжение ' +
+    fmt(ice.T,1) + ' даН — не превышает допустимого (54 МПа).';
+  document.getElementById('final_text').textContent = ft;
+
+  res.style.display = 'block';
+}
+
+['wire','span_sel','span','tmont_sel','tmont','h'].forEach(function(id) {
+  document.getElementById(id).addEventListener('change', calc);
+  document.getElementById(id).addEventListener('input', calc);
+});
+calc();
+</script>
+</body>
+</html>
