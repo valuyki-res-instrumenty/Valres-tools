@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Калькулятор СИП-2 — 112 МПа</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; margin: 0; padding: 14px; background: #f0f2f5; color: #1a1a1a; }
+  .wrap { max-width: 480px; margin: 0 auto; }
+  h1 { font-size: 20px; color: #14467a; margin: 4px 0 10px; line-height: 1.25; }
+  .box { background: #fff; border-radius: 10px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .principles { border-left: 4px solid #14467a; font-size: 13.5px; line-height: 1.45; }
+  .principles h2 { font-size: 15px; margin: 0 0 8px; color: #14467a; }
+  .principles ul { margin: 0; padding-left: 18px; }
+  .principles li { margin-bottom: 7px; }
+  label { display: block; font-size: 13.5px; font-weight: 600; margin: 12px 0 4px; }
+  label:first-child { margin-top: 0; }
+  select, input[type=number] { width: 100%; padding: 11px 10px; font-size: 16px; border: 1px solid #c8cfd8; border-radius: 8px; background: #fff; }
+  #spanCustom, #tempCustom { margin-top: 6px; }
+  .hidden { display: none; }
+  button { width: 100%; padding: 13px; margin-top: 14px; font-size: 16px; font-weight: 600; color: #fff; background: #14467a; border: 0; border-radius: 8px; cursor: pointer; }
+  button:active { background: #0e3460; }
+  .info { background: #eef6ee; border-left: 4px solid #2e7d32; font-size: 13.5px; padding: 10px 12px; border-radius: 6px; margin-bottom: 12px; }
+  h2.sec { font-size: 15px; color: #14467a; margin: 2px 0 8px; }
+  .row { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 0; border-bottom: 1px solid #eef1f4; font-size: 14.5px; gap: 10px; }
+  .row:last-child { border-bottom: 0; }
+  .row .val { font-weight: 700; font-size: 16px; white-space: nowrap; }
+  .row .val small { font-weight: 400; font-size: 12px; color: #666; }
+  .verdict { background: #eef6ee; border-left: 4px solid #2e7d32; padding: 11px 12px; border-radius: 6px; font-size: 14.5px; font-weight: 600; }
+  .verdict.bad { background: #fdeeee; border-left-color: #c62828; color: #8e1f1f; }
+  .warn { background: #fff6e5; border-left: 4px solid #ef8f00; padding: 11px 12px; border-radius: 6px; font-size: 14px; line-height: 1.45; margin-top: 10px; }
+  .hint { font-size: 12px; color: #8a94a0; margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Калькулятор СИП-2 — стрела провеса (112 МПа)</h1>
+
+  <div class="box principles">
+    <h2>Основные принципы подхода</h2>
+    <ul>
+      <li><b>Допустимое тяжение.</b> Максимально допустимое напряжение несущей жилы &sigma;<sub>доп</sub> = <b>112 МПа</b>, что соответствует тяжению <b>612 даН</b> (при S = 54,6 мм&sup2;; для несущей 70 мм&sup2; — 784 даН). Значение принято для <b>самых тяжёлых режимов</b>: мороз &minus;40 &deg;С и гололёд при &minus;5 &deg;С.</li>
+      <li><b>Ветер не создаёт сверхкритического тяжения.</b> При векторном сложении нагрузок (по ПУЭ) ветровая составляющая даёт лишь ~2–3 % к суммарной — режим «гололёд + ветер» укладывается в допустимые 112 МПа.</li>
+      <li><b>Климатика и габарит.</b> Нормативный габарит до земли — <b>не менее 6 м</b>; климатические параметры приняты согласно <b>ПУЭ (7-е изд., гл. 2.5)</b> и СП 107.13330: стенка льда b = 15 мм (II район по гололёду), ветровой напор q<sub>н</sub> = 500 Па.</li>
+    </ul>
+  </div>
+
+  <div class="box">
+    <label for="wire">Марка провода</label>
+    <select id="wire">
+      <option>3×35+54,6+1×16</option>
+      <option>3×50+54,6+1×16</option>
+      <option selected>3×70+54,6+1×16</option>
+      <option>3×95+1×70+1×16</option>
+    </select>
+
+    <label for="spanSel">Длина пролёта, м (шаг 5 м или своё значение)</label>
+    <select id="spanSel">
+      <option>20</option><option>25</option><option selected>30</option><option>35</option><option>40</option>
+      <option value="custom">Своё значение…</option>
+    </select>
+    <input type="number" id="spanCustom" class="hidden" inputmode="decimal" min="1" step="0.1" placeholder="Введите пролёт, м">
+
+    <label for="tempSel">Температура, °С (шаг 10 °С или своё значение)</label>
+    <select id="tempSel">
+      <option>-40</option><option>-30</option><option>-20</option><option>-10</option><option>0</option>
+      <option>10</option><option>20</option><option>30</option><option selected>40</option>
+      <option value="custom">Своё значение…</option>
+    </select>
+    <input type="number" id="tempCustom" class="hidden" inputmode="decimal" step="1" placeholder="Введите температуру, °С">
+
+    <label for="height">Высота подвеса провода над землёй, м (по умолчанию 7,0 — опора СВ-95, худший случай)</label>
+    <select id="height">
+      <option value="7" selected>7 — СВ-95</option>
+      <option value="9">9 — СВ-110</option>
+    </select>
+
+    <button id="btn">Рассчитать</button>
+    <div class="hint" id="rangeHint"></div>
+  </div>
+
+  <div id="out"></div>
+</div>
+
+<script>
+'use strict';
+const E = 62000, ALPHA = 2.3e-5, SDOP = 112;
+const B_ICE = 15, RHO = 0.9, K_L = 1.3, Q_N = 500, K_V = 0.25;
+const T_ICE = -5, T_COLD = -40;
+
+const WIRES = {
+  '3×35+54,6+1×16': { p: 0.739, S: 54.6, D: 35.0 },
+  '3×50+54,6+1×16': { p: 0.86,  S: 54.6, D: 36.0 },
+  '3×70+54,6+1×16': { p: 1.06,  S: 54.6, D: 38.5 },
+  '3×95+1×70+1×16': { p: 1.294, S: 70.0, D: 42.0 }
+};
+
+function solveSigma(B, A) {           // корень уравнения σ³ − B·σ² − A = 0
+  const f = s => s*s*s - B*s*s - A;
+  let lo = 1e-4, hi = 200;
+  while (f(hi) < 0 && hi < 1e7) hi *= 2;
+  for (let i = 0; i < 200; i++) {
+    const m = (lo + hi) / 2;
+    if (f(m) < 0) lo = m; else hi = m;
+  }
+  return (lo + hi) / 2;
+}
+
+// уравнение состояния: σ − E·γt²·a²/(24σ²) = σб − E·γб²·a²/(24σб²) − E·α·(t − tб)
+function sigma(a, t, gT, sB, gB, tB) {
+  const B = sB - E*gB*gB*a*a/(24*sB*sB) - E*ALPHA*(t - tB);
+  const A = E*gT*gT*a*a/24;
+  return solveSigma(B, A);
+}
+
+function calculate() {
+  const name = document.getElementById('wire').value;
+  const w = WIRES[name];
+  const spanSel = document.getElementById('spanSel').value;
+  const tempSel = document.getElementById('tempSel').value;
+  const a  = spanSel === 'custom' ? parseFloat(document.getElementById('spanCustom').value) : parseFloat(spanSel);
+  const t  = tempSel === 'custom' ? parseFloat(document.getElementById('tempCustom').value) : parseFloat(tempSel);
+  const H  = parseFloat(document.getElementById('height').value);
+  const out = document.getElementById('out');
+  const hint = document.getElementById('rangeHint');
+  hint.textContent = '';
+  if (!isFinite(a) || !isFinite(t) || a <= 0) { out.innerHTML = ''; return; }
+  if (a < 20 || a > 40) hint.textContent = 'Пролёт вне типового диапазона 20–40 м — расчёт выполнен, результат используйте с осторожностью.';
+  else if (t < -40 || t > 40) hint.textContent = 'Температура вне диапазона −40…+40 °С — расчёт выполнен, результат используйте с осторожностью.';
+
+  const g1 = 10 * w.p / w.S;                                        // нагрузка без гололёда
+  const P_l = K_L * RHO * Math.PI * B_ICE * (w.D + B_ICE) / 1000;   // вес гололёда
+  const P_v = K_V * Q_N * (w.D + 2 * B_ICE) / 10000;                // ветер на гололёд
+  const g2 = 10 * Math.hypot(w.p + P_l, P_v) / w.S;                 // гололёд + ветер (векторно)
+  const akr = Math.sqrt(24 * 35 * ALPHA * SDOP * SDOP / (g2*g2 - g1*g1));
+
+  let sB, gB, tB, baseName;
+  if (a <= akr) { sB = SDOP; gB = g1; tB = T_COLD; baseName = 'холод (−40 °С)'; }
+  else          { sB = SDOP; gB = g2; tB = T_ICE;   baseName = 'гололёд (−5 °С)'; }
+
+  const sT   = sigma(a, t,      g1, sB, gB, tB);
+  const fT   = g1 * a * a / (8 * sT);
+  const TT   = sT * w.S / 10;
+  const s40  = sigma(a, 40,     g1, sB, gB, tB);
+  const f40  = g1 * a * a / (8 * s40);
+  const gab40 = H - f40;
+  const sm40 = sigma(a, T_COLD, g1, sB, gB, tB);
+  const Tm40 = sm40 * w.S / 10;
+  const sBW  = sigma(a, T_ICE,  g1, SDOP, g2, T_ICE);   // гололёд без ветра (σ гололёда+ветра = 112 как база)
+  const fIce = g2 * a * a / (8 * SDOP);
+  const TIce = SDOP * w.S / 10;
+  const gabIce = H - fIce;
+
+  const okStrength = sm40 <= SDOP + 0.01;
+  const needRec = gab40 < 6 || gabIce < 6;
+  const recText = needRec
+    ? (H < 9
+        ? 'Габарит до земли менее 6 м. Рекомендация: применить опоры <b>СВ-110 взамен СВ-95</b> (подвес 9 м) или использовать <b>завышенную траверсу</b> для доведения габарита до допустимого значения — не менее 6 м при +40 °С.'
+        : 'Габарит до земли менее 6 м даже при подвесе 9 м (СВ-110). Рекомендация: использовать <b>завышенную траверсу</b> для доведения габарита до допустимого значения — не менее 6 м при +40 °С.')
+    : '';
+
+  const fmt = (x, d) => x.toLocaleString('ru-RU', { minimumFractionDigits: d, maximumFractionDigits: d });
+
+  out.innerHTML =
+    '<div class="box">' +
+      '<h2 class="sec">Стрела и тяжение (t = ' + fmt(t, 0) + ' °С)</h2>' +
+      row('Стрела провеса', fmt(fT, 2) + ' <small>м</small>') +
+      row('Тяжение', fmt(TT, 1) + ' <small>даН (&sigma; = ' + fmt(sT, 2) + ' МПа)</small>') +
+    '</div>' +
+    '<div class="box">' +
+      '<h2 class="sec">Контроль габарита</h2>' +
+      row('Габарит при +40 °С', fmt(gab40, 2) + ' <small>м</small>') +
+      row('Габарит в гололёд (−5 °С)', fmt(gabIce, 2) + ' <small>м</small>') +
+      '<div class="hint">Норма — не менее 6 м. Габарит считается от наибольшей стрелы: при +40 °С и в гололёд.</div>' +
+      (needRec ? '<div class="warn">' + recText + '</div>' : '') +
+    '</div>' +
+    '<div class="box">' +
+      '<h2 class="sec">Тяжёлые режимы — проверка прочности (МПа)</h2>' +
+      row('σ гололёд + ветер (−5 °С)', fmt(SDOP, 2) + ' <small>МПа — режим-база</small>') +
+      row('σ гололёд без ветра', fmt(sBW, 2) + ' <small>МПа</small>') +
+      row('f гололёда', fmt(fIce, 3) + ' <small>м</small>') +
+      row('T гололёда', fmt(TIce, 0) + ' <small>даН</small>') +
+      row('T при −40 °С', fmt(Tm40, 1) + ' <small>даН (&sigma; = ' + fmt(sm40, 2) + ' МПа)</small>') +
+      '<div class="verdict' + (okStrength ? '' : ' bad') + '" style="margin-top:8px">' +
+        (okStrength ? 'ВЕРДИКТ: OK — мороз и гололёд ≤ 112 МПа. Соответствует!' : 'ВЕРДИКТ: превышение 112 МПа — требуется проверка!') +
+      '</div>' +
+      (needRec ? '<div class="warn">' + recText + '</div>' : '') +
+    '</div>';
+
+  function row(label, val) {
+    return '<div class="row"><span>' + label + '</span><span class="val">' + val + '</span></div>';
+  }
+}
+
+document.getElementById('spanSel').addEventListener('change', e => {
+  document.getElementById('spanCustom').classList.toggle('hidden', e.target.value !== 'custom');
+  if (e.target.value !== 'custom') calculate();
+});
+document.getElementById('tempSel').addEventListener('change', e => {
+  document.getElementById('tempCustom').classList.toggle('hidden', e.target.value !== 'custom');
+  if (e.target.value !== 'custom') calculate();
+});
+['wire', 'height'].forEach(id => document.getElementById(id).addEventListener('change', calculate));
+['spanCustom', 'tempCustom'].forEach(id => document.getElementById(id).addEventListener('input', calculate));
+document.getElementById('btn').addEventListener('click', calculate);
+calculate();
+</script>
+</body>
+</html>
