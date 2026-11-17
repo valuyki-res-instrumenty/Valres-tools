@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Расчёт падения напряжения ВЛ-0,4 кВ</title>
+<style>
+  :root{
+    --bg:#f4f6f8; --card:#fff; --line:#d9e1e8; --txt:#1d2b36; --mut:#5c6b78;
+    --acc:#0f6cbd; --ok:#1a7f37; --warn:#b25e09; --bad:#c62828;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.45 -apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--txt)}
+  header{background:#1d2b36;color:#fff;padding:14px 22px}
+  header h1{margin:0;font-size:19px;font-weight:600}
+  header p{margin:2px 0 0;font-size:12.5px;color:#9fb3c4}
+  .wrap{max-width:1250px;margin:0 auto;padding:16px}
+  .tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+  .tabs button{border:1px solid var(--line);background:#fff;border-radius:8px 8px 0 0;
+    padding:8px 16px;font-size:14px;cursor:pointer;color:var(--mut)}
+  .tabs button.on{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:0 10px 10px 10px;
+    padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  .set{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:14px;padding:12px 14px;
+    background:#eef4f9;border:1px solid var(--line);border-radius:8px}
+  .set label{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px}
+  .set input{width:110px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:14px;background:#fffef0}
+  .hint{font-size:12.5px;color:var(--mut);margin:6px 0 12px}
+  table{border-collapse:collapse;width:100%;font-size:13.5px}
+  th{background:#e8eef4;border:1px solid var(--line);padding:6px 7px;font-weight:600;position:sticky;top:0}
+  td{border:1px solid var(--line);padding:4px 6px}
+  td input{width:100%;min-width:56px;border:1px solid transparent;background:transparent;
+    padding:4px 5px;font-size:13.5px;border-radius:4px}
+  td input:focus{outline:2px solid var(--acc);background:#fff}
+  td select{width:100%;min-width:150px;padding:4px 5px;font-size:13.5px;border:1px solid var(--line);
+    border-radius:4px;background:#fffef0}
+  td.calc{background:#f2f7f2;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .bad{background:#fdecea;color:var(--bad);font-weight:600}
+  .ok{background:#e8f5e9;color:var(--ok);font-weight:600}
+  .warn{background:#fff4e5;color:var(--warn);font-weight:600}
+  .mut{color:var(--mut)}
+  .btns{margin:12px 0 0;display:flex;gap:8px;flex-wrap:wrap}
+  .btns button{padding:7px 14px;border:1px solid var(--line);border-radius:6px;background:#fff;
+    cursor:pointer;font-size:13.5px}
+  .btns button:hover{border-color:var(--acc);color:var(--acc)}
+  .btns button.del{color:var(--bad)}
+  .ref table td:first-child{font-weight:500}
+  .ref h3{margin:16px 0 6px;font-size:15px}
+  .ref p,.ref li{font-size:13.5px;color:var(--mut)}
+  .foot{margin-top:14px;font-size:12.5px;color:var(--mut)}
+  b.r{color:var(--acc)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Расчёт падения напряжения в линии ВЛ-0,4 кВ</h1>
+  <p>Калькулятор на основе расчётной книги (v6) &middot; работает офлайн, всё считается прямо в браузере</p>
+</header>
+<div class="wrap">
+  <div class="tabs">
+    <button class="on" data-t="t1" onclick="showTab(this)">Таблица 1 — трёхфазная</button>
+    <button data-t="t2" onclick="showTab(this)">Таблица 2 — однофазная</button>
+    <button data-t="ref" onclick="showTab(this)">Справочник</button>
+  </div>
+
+  <!-- ======== Таблица 1 (3 фазы) ======== -->
+  <div class="card" id="tab-t1">
+    <div class="set">
+      <label>U0 (номинал), В<input id="t1_U0" type="text" inputmode="decimal" value="380"></label>
+      <label>cos φ<input id="t1_cos" type="text" inputmode="decimal" value="0.8"></label>
+      <label>K темп. (1,0 зима / 1,1 лето)<input id="t1_K" type="text" inputmode="decimal" value="1"></label>
+      <label>Мин. допустимое U, В<input id="t1_Umin" type="text" inputmode="decimal" value="342"></label>
+      <label style="justify-content:flex-end"><span>&nbsp;</span><span class="mut" style="font-size:12.5px">
+        ΔU = 1,732·I·L·K·(R₀·cosφ + X₀·sinφ)</span></label>
+    </div>
+    <p class="mut" style="margin:-4px 2px 10px;font-size:12.5px">Значения Ro и Xo подтягиваются в расчёт автоматически из справочника при выборе марки провода.</p>
+    <div style="overflow:auto;max-height:62vh">
+      <table id="tbl1">
+        <thead><tr>
+          <th style="min-width:120px">№ участка</th><th>Марка провода</th>
+          <th>I, А</th><th>L, км</th><th>ΔU, В</th><th>ΔU накопл., В</th><th>U₂, В</th>
+          <th>Отклонение, %</th><th>Решение</th><th>Iдоп, А</th><th>Проверка по Iдоп</th><th>Рекомендация</th><th></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="btns">
+      <button onclick="addRow('t1')">+ Добавить участок</button>
+      <button onclick="clearRows('t1')">Очистить всё</button>
+    </div>
+    <p class="hint">Порог вердикта — сравнение U₂ конца участка с «Мин. допустимым U» (380 − 10 % = 342 В).
+    Рекомендация подбирает минимальную марку, проходящую по падению И по току: голый провод меняется на ближайший голый большего сечения (СИП указывается как вариант), СИП — на СИП; если ни одна не проходит по падению — «секционировать».</p>
+  </div>
+
+  <!-- ======== Таблица 2 (1 фаза) ======== -->
+  <div class="card" id="tab-t2" style="display:none">
+    <div class="set">
+      <label>U0 (номинал), В<input id="t2_U0" type="text" inputmode="decimal" value="230"></label>
+      <label>cos φ<input id="t2_cos" type="text" inputmode="decimal" value="0.8"></label>
+      <label>K темп. (1,0 зима / 1,1 лето)<input id="t2_K" type="text" inputmode="decimal" value="1"></label>
+      <label>Мин. допустимое U, В<input id="t2_Umin" type="text" inputmode="decimal" value="200"></label>
+      <label style="justify-content:flex-end"><span>&nbsp;</span><span class="mut" style="font-size:12.5px">
+        ΔU = I·L·K·[(R₀ф+R₀н)·cosφ + (X₀ф+X₀н)·sinφ]</span></label>
+    </div>
+    <p class="mut" style="margin:-4px 2px 10px;font-size:12.5px">Значения Ro и Xo подтягиваются в расчёт автоматически из справочника при выборе марки фазного и нулевого провода.</p>
+    <div style="overflow:auto;max-height:62vh">
+      <table id="tbl2">
+        <thead><tr>
+          <th style="min-width:120px">№ участка</th><th>Марка фазы</th><th>Марка нуля</th>
+          <th>I, А</th><th>L, км</th><th>ΔU, В</th><th>ΔU накопл., В</th><th>U₂, В</th>
+          <th>Отклонение, %</th><th>Решение</th><th>Iдоп, А</th><th>Проверка по Iдоп</th><th>Рекомендация</th><th></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="btns">
+      <button onclick="addRow('t2')">+ Добавить участок</button>
+      <button onclick="clearRows('t2')">Очистить всё</button>
+    </div>
+    <p class="hint">Порог вердикта — U₂ меньше «Мин. допустимого U» (230 − 10 % ≈ 207 В; по умолчанию 200 В — «не ниже двухсотки»).
+    Падение считается по контуру «фаза + ноль»: двойка возникает сама, когда ноль равен фазе, а для СИП — через реальное сопротивление несущей жилы.</p>
+  </div>
+
+  <!-- ======== Справочник ======== -->
+  <div class="card ref" id="tab-ref" style="display:none">
+    <h3>Марки фазных проводов</h3>
+    <table id="refPh"><thead><tr><th>Марка</th><th>R₀, Ом/км</th><th>X₀, Ом/км</th><th>Iдоп, А</th><th>Примечание</th></tr></thead><tbody></tbody></table>
+    <h3>Нулевые провода</h3>
+    <table id="refN"><thead><tr><th>Марка</th><th>R₀, Ом/км</th><th>X₀, Ом/км</th></tr></thead><tbody></tbody></table>
+    <h3>Примечания</h3>
+    <ul>
+      <li>X₀ = 0,3 Ом/км — голый провод на изоляторах (ВЛ до 1 кВ); X₀ = 0,1 Ом/км — СИП (жилы в жгуте). Если есть паспортные данные конкретного провода — они точнее табличных.</li>
+      <li>R₀ — из РАП-10; Iдоп — ПУЭ табл. 1.3.29 (нагрев +70 °С при воздухе +25 °С) и ГОСТ 31946-2012 для СИП.</li>
+      <li>Повторные заземления PEN: на концах ВЛ и ответвлений &gt; 200 м, не реже чем через 250 м; сопротивление не более 30 Ом (ПУЭ 2.4.38, 1.7.102). Падение в нулевом проводе учитывается полностью, повторные заземления НЕ вычитаются — это в запас (через них уходит лишь единицы процентов тока).</li>
+      <li>Рекомендация пошаговая: после замены провода на участке накопленное падение выше по линии пересчитывается — смотрите колонку заново, идём сверху вниз.</li>
+      <li>Данные сохраняются в браузере (localStorage) — можно закрыть и вернуться позже.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+"use strict";
+// ===== СПРАВОЧНИК =====
+const PH = [
+ {n:"А-16", ro:1.98, x:0.3, i:105, note:"голый алюминий"},
+ {n:"А-25", ro:1.28, x:0.3, i:136, note:""},
+ {n:"А-35", ro:0.91, x:0.3, i:170, note:""},
+ {n:"А-50", ro:0.59, x:0.3, i:215, note:""},
+ {n:"А-70", ro:0.42, x:0.3, i:265, note:""},
+ {n:"СИП-2А (3х25+54,6)", ro:1.2, x:0.1, i:112, note:"Ro фазной жилы"},
+ {n:"СИП-2А (3х35+54,6)", ro:0.868, x:0.1, i:138, note:""},
+ {n:"СИП-2А (3х50+54,6)", ro:0.641, x:0.1, i:195, note:"ГОСТ 31946-2012"},
+ {n:"СИП-2А (3х70+54,6)", ro:0.443, x:0.1, i:165, note:""},
+ {n:"СИП-2А (3х70+70)", ro:0.443, x:0.1, i:180, note:""},
+ {n:"СИП-2А (3х95+70)", ro:0.32, x:0.1, i:258, note:""},
+ {n:"СИП-2А (3х120+70)", ro:0.253, x:0.1, i:300, note:"исправлено: было «3х12+70»"}
+];
+const NZ = [
+ {n:"А-16", ro:1.98, x:0.3},{n:"А-25", ro:1.28, x:0.3},{n:"А-35", ro:0.91, x:0.3},
+ {n:"А-50", ro:0.59, x:0.3},{n:"А-70", ro:0.42, x:0.3},
+ {n:"несущая СИП 54,6", ro:0.63, x:0.1},{n:"несущая СИП 70", ro:0.463, x:0.1}
+];
+// типовой ноль для рекомендации: голый — ноль=фазе; СИП — несущая
+function typZero(name){
+  if(name.startsWith("СИП")){
+    return name.includes("+70") && !name.includes("54,6") ? NZ[6] : NZ[5];
+  }
+  const ph = PH.find(p=>p.n===name);
+  return ph ? {n:name+" (ноль=фазе)", ro:ph.ro, x:ph.x} : null;
+}
+const PHBY = {}; PH.forEach(p=>PHBY[p.n]=p);
+const NZBY = {}; NZ.forEach(p=>NZBY[p.n]=p);
+
+const SQRT3 = 1.7320508;
+
+// ===== СОСТОЯНИЕ =====
+let state = {
+  t1:{U0:380, cos:0.8, K:1, Umin:342, rows:[
+    {nm:"", ph:"", i:null, l:null},
+    {nm:"", ph:"", i:null, l:null},
+    {nm:"", ph:"", i:null, l:null}
+  ]},
+  t2:{U0:230, cos:0.8, K:1, Umin:200, rows:[
+    {nm:"от Тр-ра до оп.3", ph:"СИП-2А (3х35+54,6)", nz:"несущая СИП 54,6", i:25, l:0.6},
+    {nm:"оп.3-4", ph:"СИП-2А (3х35+54,6)", nz:"несущая СИП 54,6", i:25, l:0.6}
+  ]}
+};
+
+// ===== ХЕЛПЕРЫ =====
+const $=(id)=>document.getElementById(id);
+function fmt(v,d){ if(v===null||v===undefined||isNaN(v)) return "—"; return (+v).toLocaleString("ru-RU",{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function opts(sel, list){ return list.map(m=>`<option value="${m}"${m===sel?" selected":""}>${m===""?"— выберите —":m}</option>`).join(""); }
+function badge(txt,cls){ return `<span class="${cls}">${txt}</span>`; }
+
+// ===== РАСЧЁТ =====
+function calcTable(t){
+  const cfg = state[t];
+  const cos = parseNum(cfg.cos) ?? 0.8, sin = Math.sqrt(Math.max(0,1-cos*cos));
+  const U0 = parseNum(cfg.U0) ?? (t==="t2"?230:380);
+  const K = parseNum(cfg.K) ?? 1;
+  const Umin = parseNum(cfg.Umin) ?? (t==="t2"?200:342);
+  const is1 = (t==="t2");
+  let accum = 0;
+  const out = [];
+  for(const r of cfg.rows){
+    const ph = r.ph?PHBY[r.ph]:null;
+    const nz = is1 ? (r.nz?NZBY[r.nz]:null) : null;
+    const I = parseNum(r.i);
+    const L = parseNum(r.l);
+    const o = {roF:ph?ph.ro:null, xF:ph?ph.x:null, roN:is1?(nz?nz.ro:null):null, xN:is1?(nz?nz.x:null):null,
+               I, L, dU:null, acc:accum, U2:null, dev:null, verdict:"", idop:ph?ph.i:null, ichk:"", rec:""};
+    const ready = ph && I!==null && L!==null && I>0 && L>0 && (!is1 || nz);
+    if(ready){
+      const rX = is1 ? (o.roF+o.roN)*cos + (o.xF+o.xN)*sin : o.roF*cos + o.xF*sin;
+      const f  = is1 ? 1 : SQRT3;
+      o.dU = f * I * L * K * rX;
+      accum += o.dU;
+      o.acc = accum;
+      o.U2 = U0 - accum;
+      o.dev = (o.U2 - U0)/U0*100;
+      o.verdict = o.U2 < Umin ? "Замена провода" : "Ok!";
+      // проверка по току
+      if(ph.i===null){ o.ichk = "нет данных"; }
+      else if(I > ph.i){ o.ichk = "ПРЕВЫШЕНИЕ Iдоп!"; }
+      else { o.ichk = "Норма"; }
+      // рекомендация (если плохой вердикт или превышение тока)
+      const needFix = (o.verdict==="Замена провода") || (o.ichk==="ПРЕВЫШЕНИЕ Iдоп!");
+      if(needFix){
+        const budget = U0 - Umin - (accum - o.dU);   // допустимое падение на участке
+        const curSip = r.ph.startsWith("СИП");
+        const cand = PH.filter(p=>p.i!==null)
+          .map(p=>{
+            const z = is1 ? typZero(p.n) : null;
+            const rXp = is1 ? (p.ro+z.ro)*cos + (p.x+z.x)*sin : p.ro*cos + p.x*sin;
+            const dUp = f * I * L * K * rXp;
+            return {name:p.n, okU:dUp<=budget+1e-9, okI:I<=p.i, dUp, sip:p.n.startsWith("СИП")};
+          });
+        // кандидаты, проходящие и по падению, и по току; ищем самую ТОНКУЮ
+        // (у неё максимальное dUp среди проходящих) — сортируем по фактическому
+        // падению на участке, это честно для смеси голых проводов и СИП
+        const pass = cand.filter(c=>c.okU && c.okI).sort((a,b)=>a.dUp-b.dUp);
+        if(pass.length){
+          const same = pass.filter(c=>c.sip===curSip);
+          const pick = same.length ? same[same.length-1] : pass[pass.length-1];
+          o.rec = pick.name;
+          if(is1 && !pick.sip) o.rec += " (ноль той же марки)";
+          if(!curSip){
+            const sipAlt = pass.filter(c=>c.sip);
+            if(sipAlt.length && sipAlt[sipAlt.length-1].name!==pick.name)
+              o.rec += " (или СИП: " + sipAlt[sipAlt.length-1].name + ")";
+          }
+          if(cand.some(c=>c.okU && !c.okI && c.dUp>pick.dUp)) o.rec += " (по току)";
+        } else if(cand.some(c=>c.okU)){
+          const byI = cand.filter(c=>c.okI).sort((a,b)=>a.dUp-b.dUp);
+          const sameI = byI.filter(c=>c.sip===curSip);
+          const pickI = sameI.length ? sameI[0] : byI[0];
+          o.rec = pickI.name + " (по току)";
+        } else {
+          o.rec = "Линия слишком длинная — секционировать";
+        }
+      }
+    }
+    out.push(o);
+  }
+  return out;
+}
+function pairRo(name){ const z=typZero(name); const p=PHBY[name]; return p&&z? p.ro+z.ro : 999; }
+function pairName(name){ const z=typZero(name); return z? name+" + "+z.n : name; }
+
+// ===== ОТРИСОВКА =====
+function render(t){
+  const res = calcTable(t);
+  const tb = $(t==="t1"?"tbl1":"tbl2").querySelector("tbody");
+  const is1 = (t==="t2");
+  tb.innerHTML = state[t].rows.map((r,idx)=>{
+    const o = res[idx];
+    let cells = `<td><input data-t="${t}" data-i="${idx}" data-k="nm" value="${esc(r.nm)}"></td>`;
+    if(is1){
+      cells += `<td><select data-t="${t}" data-i="${idx}" data-k="ph">${opts(r.ph,["",...PH.map(p=>p.n)])}</select></td>
+        <td><select data-t="${t}" data-i="${idx}" data-k="nz">${opts(r.nz,["",...NZ.map(p=>p.n)])}</select></td>`;
+    } else {
+      cells += `<td><select data-t="${t}" data-i="${idx}" data-k="ph">${opts(r.ph,["",...PH.map(p=>p.n)])}</select></td>`;
+    }
+    cells += `<td><input data-t="${t}" data-i="${idx}" data-k="i" type="text" inputmode="decimal" value="${r.i??""}"></td>
+      <td><input data-t="${t}" data-i="${idx}" data-k="l" type="text" inputmode="decimal" value="${r.l??""}"></td>
+      <td class="calc">${fmt(o.dU,2)}</td><td class="calc">${fmt(o.acc!==0?o.acc:null,2)}</td>
+      <td class="calc">${fmt(o.U2,1)}</td><td class="calc">${fmt(o.dev,2)}</td>`;
+    const vcls = o.verdict==="Ok!"?"ok":(o.verdict?"bad":"");
+    cells += `<td class="${vcls}">${o.verdict||""}</td>`;
+    cells += `<td class="calc">${fmt(o.idop,0)}</td>`;
+    const icls = o.ichk==="Норма"?"ok":(o.ichk.includes("ПРЕВЫШЕНИЕ")?"bad":"");
+    cells += `<td class="${icls}">${o.ichk}</td>`;
+    cells += `<td style="min-width:170px;font-size:12.5px">${o.rec?badge(o.rec,"warn"):""}</td>`;
+    cells += `<td><button class="del" onclick="delRow('${t}',${idx})" title="Удалить строку">✕</button></td>`;
+    return `<tr>${cells}</tr>`;
+  }).join("");
+  fillRef();
+  saveLS();
+}
+function esc(s){ return String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
+
+function fillRef(){
+  const a=$("refPh").querySelector("tbody"), b=$("refN").querySelector("tbody");
+  if(a.dataset.done) return;
+  a.innerHTML = PH.map(p=>`<tr><td>${p.n}</td><td class="calc">${fmt(p.ro,3)}</td><td class="calc">${fmt(p.x,2)}</td><td class="calc">${p.i===null?"н/д":p.i}</td><td class="mut">${p.note}</td></tr>`).join("");
+  b.innerHTML = NZ.map(p=>`<tr><td>${p.n}</td><td class="calc">${fmt(p.ro,3)}</td><td class="calc">${fmt(p.x,2)}</td></tr>`).join("");
+  a.dataset.done=1;
+}
+
+function parseNum(v){
+  if(v===null||v===undefined) return null;
+  const n = +String(v).replace(/\s/g,"").replace(/,/g,".");
+  return isNaN(n)?null:n;
+}
+// точечное обновление расчётных ячеек без пересборки строк — фокус ввода не теряется
+function updateCalcs(t){
+  const res = calcTable(t);
+  const is1 = (t==="t2");
+  const tb = $(t==="t1"?"tbl1":"tbl2").querySelector("tbody");
+  const trs = tb.querySelectorAll("tr");
+  state[t].rows.forEach((r, idx)=>{
+    const o = res[idx];
+    const tr = trs[idx]; if(!tr) return;
+    const td = tr.querySelectorAll("td");
+    const c0 = is1 ? 5 : 4; // первая расчётная колонка (dU) после nm,[ph,nz],i,l
+    td[c0].textContent = fmt(o.dU,2);
+    td[c0+1].textContent = fmt(o.acc!==0?o.acc:null,2);
+    td[c0+2].textContent = fmt(o.U2,1);
+    td[c0+3].textContent = fmt(o.dev,2);
+    const vt = td[c0+4];
+    vt.textContent = o.verdict||"";
+    vt.className = o.verdict==="Ok!"?"ok":(o.verdict?"bad":"");
+    td[c0+5].textContent = fmt(o.idop,0);
+    const it = td[c0+6];
+    it.textContent = o.ichk;
+    it.className = o.ichk==="Норма"?"ok":(o.ichk.includes("ПРЕВЫШЕНИЕ")?"bad":"");
+    td[c0+7].innerHTML = o.rec?badge(o.rec,"warn"):"";
+  });
+  saveLS();
+}
+
+// ===== СОБЫТИЯ =====
+document.addEventListener("input",e=>{
+  const el=e.target;
+  if(el.id && /^t[12]_(U0|cos|K|Umin)$/.test(el.id)){
+    const [t,key]=el.id.split("_"); state[t][key]=el.value; updateCalcs(t); return;
+  }
+  if(el.dataset && el.dataset.t && el.dataset.i!==undefined && el.dataset.k){
+    const t=el.dataset.t, idx=+el.dataset.i, k=el.dataset.k;
+    state[t].rows[idx][k] = el.value;
+    updateCalcs(t);
+  }
+});
+function addRow(t){ state[t].rows.push(t==="t2"?{nm:"",ph:"",nz:"",i:null,l:null}:{nm:"",ph:"",i:null,l:null}); render(t); }
+function delRow(t,i){ state[t].rows.splice(i,1); if(!state[t].rows.length) addRow(t); render(t); }
+function clearRows(t){ state[t].rows = state[t].rows.map(()=>t==="t2"?{nm:"",ph:"",nz:"",i:null,l:null}:{nm:"",ph:"",i:null,l:null}); render(t); }
+function showTab(btn){
+  document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b===btn));
+  ["t1","t2","ref"].forEach(id=>$("tab-"+id).style.display = (btn.dataset.t===id?"":"none"));
+}
+
+// ===== ХРАНЕНИЕ =====
+function saveLS(){ try{ localStorage.setItem("vl04calc", JSON.stringify(state)); }catch(e){} }
+function loadLS(){ try{ const s=localStorage.getItem("vl04calc"); if(s){ const d=JSON.parse(s); if(d&&d.t1&&d.t2) state=d; } }catch(e){} }
+
+// ===== СТАРТ =====
+loadLS();
+["t1","t2"].forEach(t=>{
+  const cfg=state[t];
+  $(t+"_U0").value=cfg.U0; $(t+"_cos").value=cfg.cos; $(t+"_K").value=cfg.K; $(t+"_Umin").value=cfg.Umin;
+  render(t);
+});
+</script>
+</body>
+</html>
