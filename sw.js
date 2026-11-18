@@ -1,6 +1,6 @@
 // Валрес-инструменты — сервисный скрипт PWA
-// Версия 4: добавлены калькуляторы стрел провеса СИП-2 и СИП-4
-const CACHE_NAME = 'valuyki-instruments-v4';
+// Версия 5: добавлены калькуляторы «Падение напряжения U-0,4 кВ» и «Потери в линии 0,4 кВ»
+const CACHE_NAME = 'valuyki-instruments-v5';
 
 const ASSETS = [
   './',
@@ -10,6 +10,8 @@ const ASSETS = [
   './vl-10-sag-calculator.html',
   './sag-04kv.html',
   './kz-04kv.html',
+  './Padenie-U-04kv.html',
+  './poteri-04kv.html',
   './manifest.json'
 ];
 
